@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="每天 10 個生活英文，搭配間隔複習，在自己的步調中慢慢進步。">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="每日英文">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+    <link rel="stylesheet" href="./styles.css">
+    <title>每日英文單字</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到主要內容</a>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="header-row">
+          <div>
+            <p class="eyebrow">DAILY ENGLISH</p>
+            <h1 id="page-title">今天的 10 個字</h1>
+          </div>
+          <div class="streak-pill" aria-label="目前連續學習天數">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M13.5 2.5s.7 4-2.3 6.4c-2.7 2.2-4.7 4.3-4.7 7.4a5.5 5.5 0 0 0 11 0c0-2.2-1.2-4.6-3.2-6.8.1 2.1-.6 3.4-1.8 4.3.2-4.2 1-7.1 1-11.3Z"/></svg>
+            <span id="header-streak">0</span>
+          </div>
+        </div>
+        <p id="header-subtitle" class="header-subtitle">每天一點點，記得更久。</p>
+      </header>
+
+      <main id="main-content">
+        <section id="today-view" class="view is-active" aria-labelledby="today-heading">
+          <div class="section-heading">
+            <div>
+              <p id="today-date" class="section-kicker"></p>
+              <h2 id="today-heading">今日單字</h2>
+            </div>
+            <span id="today-progress" class="count-chip">10 個</span>
+          </div>
+          <div id="today-complete-card" class="celebration-card" hidden>
+            <div class="celebration-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="m5 12.5 4 4L19 6.8"/></svg>
+            </div>
+            <div>
+              <h3>今天完成了！</h3>
+              <p>這 10 個字已排入明天的複習。</p>
+            </div>
+          </div>
+          <div id="word-list" class="word-list"></div>
+          <button id="complete-today" class="primary-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12.5 4 4L19 6.8"/></svg>
+            我學完今天的 10 個字了
+          </button>
+        </section>
+
+        <section id="review-view" class="view" aria-labelledby="review-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">間隔複習</p>
+              <h2 id="review-heading">今天來複習</h2>
+            </div>
+            <span id="review-remaining" class="count-chip">0 個</span>
+          </div>
+          <div id="review-empty" class="empty-state" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6.5h16v12H4zM8 10h8M8 14h5"/></svg>
+            <h3>今天沒有待複習單字</h3>
+            <p>完成今日單字後，明天會開始第一輪複習。</p>
+          </div>
+          <div id="review-area" hidden>
+            <p class="flip-hint">先想想中文意思，再點卡片翻面</p>
+            <button id="review-card" class="review-card" type="button" aria-pressed="false">
+              <span class="review-card-inner">
+                <span class="review-face review-front" aria-hidden="false">
+                  <span id="review-level" class="level-badge"></span>
+                  <strong id="review-word"></strong>
+                  <span id="review-pos" class="review-pos"></span>
+                  <span class="tap-prompt">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v16M5 11l7-7 7 7"/></svg>
+                    點一下看答案
+                  </span>
+                </span>
+                <span class="review-face review-back" aria-hidden="true">
+                  <span id="review-zh" class="review-zh"></span>
+                  <span id="review-example" class="review-example"></span>
+                  <span id="review-example-zh" class="review-example-zh"></span>
+                </span>
+              </span>
+            </button>
+            <div id="review-actions" class="review-actions" hidden>
+              <button id="forgot-button" class="answer-button forgot" type="button">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                忘記
+              </button>
+              <button id="remember-button" class="answer-button remember" type="button">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12.5 4 4L19 6.8"/></svg>
+                記得
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section id="progress-view" class="view" aria-labelledby="progress-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">你的學習足跡</p>
+              <h2 id="progress-heading">進度總覽</h2>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <article class="stat-card"><span id="stat-streak">0</span><p>連續天數</p></article>
+            <article class="stat-card"><span id="stat-reviewing">0</span><p>複習中</p></article>
+            <article class="stat-card"><span id="stat-mastered">0</span><p>已精通</p></article>
+            <article class="stat-card"><span id="stat-days">0</span><p>完成天數</p></article>
+          </div>
+          <aside id="install-guide" class="install-guide" hidden>
+            <div class="install-title">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg>
+              <h3>加入 iPhone 主畫面</h3>
+            </div>
+            <ol>
+              <li>用 Safari 開啟這個網頁。</li>
+              <li>點下方的「分享」按鈕。</li>
+              <li>往下選「加入主畫面」，再按「新增」。</li>
+            </ol>
+          </aside>
+          <section class="learned-section" aria-labelledby="learned-heading">
+            <div class="section-heading compact">
+              <h3 id="learned-heading">學過的單字</h3>
+              <span id="learned-count" class="count-chip">0 個</span>
+            </div>
+            <div id="learned-list" class="learned-list"></div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="主要分頁">
+        <button class="nav-button is-active" type="button" data-view="today" aria-current="page">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Zm0 12h11M9 8h6M9 11h5"/></svg>
+          <span>今日單字</span>
+        </button>
+        <button class="nav-button" type="button" data-view="review">
+          <span class="nav-icon-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h12a4 4 0 0 1 4 4v6H8a4 4 0 0 1-4-4V7Zm4 10v3M16 17v3"/></svg>
+            <span id="review-badge" class="review-badge" hidden>0</span>
+          </span>
+          <span>複習</span>
+        </button>
+        <button class="nav-button" type="button" data-view="progress">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 20V10h4v10M10 20V4h4v16M15 20v-7h4v7"/></svg>
+          <span>進度</span>
+        </button>
+      </nav>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
