@@ -10,12 +10,16 @@ import {
   getDueWords,
   normalizeState
 } from "./core.js";
+import { pickAmericanVoice, voicePitch } from "./speech.js";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
 );
 const navButtons = [...document.querySelectorAll(".nav-button")];
+const voiceButtons = [...document.querySelectorAll("[data-voice-gender]")];
 const views = ["today", "review", "progress"];
+let availableVoices = [];
+let speakingWord = "";
 
 function getToday() {
   const requested = new URLSearchParams(location.search).get("date");
@@ -57,6 +61,52 @@ function stripStrong(value) {
   return value.replace(/<\/?strong>/g, "");
 }
 
+function refreshVoices() {
+  if ("speechSynthesis" in window) availableVoices = speechSynthesis.getVoices();
+}
+
+function renderVoiceControl() {
+  voiceButtons.forEach((button) => {
+    const active = button.dataset.voiceGender === state.voiceGender;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function updateSpeakButtons() {
+  document.querySelectorAll("[data-speak-word]").forEach((button) => {
+    const active = speakingWord === button.dataset.speakWord;
+    button.classList.toggle("is-speaking", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function speakWord(word) {
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+    showToast("這個瀏覽器不支援語音播放");
+    return;
+  }
+
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(word);
+  const voice = pickAmericanVoice(availableVoices, state.voiceGender);
+  utterance.lang = "en-US";
+  utterance.rate = 0.86;
+  utterance.pitch = voicePitch(state.voiceGender);
+  if (voice) utterance.voice = voice;
+  utterance.onstart = () => {
+    speakingWord = word;
+    updateSpeakButtons();
+  };
+  const finish = () => {
+    speakingWord = "";
+    updateSpeakButtons();
+  };
+  utterance.onend = finish;
+  utterance.onerror = finish;
+  speechSynthesis.speak(utterance);
+}
+
 function wordCard(item, index) {
   const article = document.createElement("article");
   article.className = "word-card";
@@ -68,15 +118,26 @@ function wordCard(item, index) {
       </div>
       <span class="topic-chip">${item.topic}</span>
     </div>
-    <div class="word-title-row">
-      <h3>${item.word}</h3>
-      <span>${item.partOfSpeech}</span>
+    <div class="word-heading-row">
+      <div>
+        <div class="word-title-row">
+          <h3>${item.word}</h3>
+          <span>${item.partOfSpeech}</span>
+        </div>
+        <p class="phonetic"><span>KK</span> ${item.phonetic}</p>
+      </div>
+      <button class="speak-button" type="button" aria-pressed="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+      </button>
     </div>
     <p class="word-meaning">${item.zh}</p>
     <div class="example-box">
       <p>${item.example}</p>
       <p>${item.exampleZh}</p>
     </div>`;
+  const speakButton = article.querySelector(".speak-button");
+  speakButton.dataset.speakWord = item.word;
+  speakButton.setAttribute("aria-label", `播放 ${item.word} 的美式發音`);
   return article;
 }
 
@@ -112,7 +173,10 @@ function renderReview() {
   elements.reviewActions.hidden = true;
   elements.reviewLevel.textContent = currentReview.level;
   elements.reviewWord.textContent = currentReview.word;
+  elements.reviewPhonetic.textContent = `KK ${currentReview.phonetic}`;
   elements.reviewPos.textContent = currentReview.partOfSpeech;
+  elements.reviewSpeak.dataset.speakWord = currentReview.word;
+  elements.reviewSpeak.setAttribute("aria-label", `播放 ${currentReview.word} 的美式發音`);
   elements.reviewZh.textContent = currentReview.zh;
   elements.reviewExample.innerHTML = currentReview.example;
   elements.reviewExampleZh.textContent = currentReview.exampleZh;
@@ -154,6 +218,7 @@ function renderProgress() {
 }
 
 function renderAll() {
+  renderVoiceControl();
   renderToday();
   renderReview();
   renderProgress();
@@ -188,6 +253,21 @@ elements.completeToday.addEventListener("click", () => {
   showToast("完成！明天開始複習這 10 個字");
 });
 
+voiceButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.voiceGender = button.dataset.voiceGender;
+    saveState();
+    renderVoiceControl();
+    showToast(`已切換為${state.voiceGender === "female" ? "女聲" : "男聲"}美式發音`);
+  });
+});
+
+elements.wordList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-speak-word]");
+  if (button) speakWord(button.dataset.speakWord);
+});
+elements.reviewSpeak.addEventListener("click", () => speakWord(elements.reviewSpeak.dataset.speakWord));
+
 elements.reviewCard.addEventListener("click", () => {
   const flipped = !elements.reviewCard.classList.contains("is-flipped");
   elements.reviewCard.classList.toggle("is-flipped", flipped);
@@ -215,6 +295,15 @@ window.addEventListener("popstate", () => switchView(location.hash.slice(1) || "
 
 renderAll();
 switchView(location.hash.slice(1) || "today");
+
+if ("speechSynthesis" in window) {
+  refreshVoices();
+  if (typeof speechSynthesis.addEventListener === "function") {
+    speechSynthesis.addEventListener("voiceschanged", refreshVoices);
+  } else {
+    speechSynthesis.onvoiceschanged = refreshVoices;
+  }
+}
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));

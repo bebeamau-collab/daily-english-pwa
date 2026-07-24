@@ -12,6 +12,8 @@ import {
   normalizeState
 } from "../core.js";
 import { WORDS } from "../words.js";
+import { PHONETICS } from "../phonetics.js";
+import { pickAmericanVoice, voicePitch } from "../speech.js";
 
 test("字庫完整且每日洗牌在一輪內不重複", () => {
   assert.ok(WORDS.length >= 300);
@@ -32,7 +34,7 @@ test("字庫完整且每日洗牌在一輪內不重複", () => {
 test("每筆資料都有必要欄位且例句含粗體單字", () => {
   const topics = new Set();
   WORDS.forEach((item) => {
-    ["word", "partOfSpeech", "zh", "example", "exampleZh", "topic", "level"].forEach((key) => {
+    ["word", "partOfSpeech", "zh", "phonetic", "example", "exampleZh", "topic", "level"].forEach((key) => {
       assert.ok(item[key], `${item.word || "未知"} 缺少 ${key}`);
     });
     assert.match(item.example, /<strong>.+<\/strong>/);
@@ -40,6 +42,8 @@ test("每筆資料都有必要欄位且例句含粗體單字", () => {
   });
   assert.equal(topics.size, 12);
   assert.ok(WORDS.some((item) => item.level === "口語"));
+  assert.equal(Object.keys(PHONETICS).length, 300);
+  assert.ok(WORDS.every((item) => /^\/.+\/$/.test(item.phonetic)));
 });
 
 test("完成今日學習會保存紀錄並安排明天複習", () => {
@@ -81,7 +85,20 @@ test("localStorage JSON 往返可持久化，streak 中斷歸零", () => {
   const state = completeToday(createInitialState(), WORDS.slice(0, 10), "2026-07-23");
   const restored = normalizeState(JSON.parse(JSON.stringify(state)));
   assert.deepEqual(restored, state);
+  assert.equal(restored.voiceGender, "female");
   assert.equal(calculateStreak(["2026-07-20", "2026-07-21", "2026-07-22"], "2026-07-23"), 3);
   assert.equal(calculateStreak(["2026-07-20"], "2026-07-23"), 0);
   assert.equal(calculateStreak(["2026-07-21", "2026-07-22", "2026-07-23"], "2026-07-23"), 3);
+});
+
+test("美式語音會優先依男女聲選擇並提供備用", () => {
+  const voices = [
+    { name: "Samantha", voiceURI: "com.apple.speech.synthesis.voice.samantha", lang: "en-US", default: true },
+    { name: "Alex", voiceURI: "com.apple.speech.synthesis.voice.alex", lang: "en-US", default: false },
+    { name: "Ting-Ting", voiceURI: "com.apple.speech.synthesis.voice.tingting", lang: "zh-TW", default: false }
+  ];
+  assert.equal(pickAmericanVoice(voices, "female").name, "Samantha");
+  assert.equal(pickAmericanVoice(voices, "male").name, "Alex");
+  assert.equal(pickAmericanVoice([{ name: "US Voice", lang: "en-US", default: true }], "male").name, "US Voice");
+  assert.ok(voicePitch("male") < voicePitch("female"));
 });

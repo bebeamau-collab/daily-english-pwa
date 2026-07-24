@@ -7,6 +7,8 @@
  * 程式會自動把例句中第一次出現的英文單字／片語加上 <strong> 粗體標籤。
  */
 
+import { PHONETICS } from "./phonetics.js";
+
 const RAW_WORDS = `
 #飲食點餐
 menu|n.|菜單|Could we see the menu, please?|可以讓我們看一下菜單嗎？|L1
@@ -350,7 +352,16 @@ export const WORDS = RAW_WORDS.trim().split("\n").flatMap((line) => {
     return [];
   }
   const [word, partOfSpeech, zh, example, exampleZh, level] = trimmed.split("|");
-  return [{ word, partOfSpeech, zh, example: boldFirst(example, word), exampleZh, topic: currentTopic, level }];
+  return [{
+    word,
+    partOfSpeech,
+    zh,
+    phonetic: PHONETICS[word],
+    example: boldFirst(example, word),
+    exampleZh,
+    topic: currentTopic,
+    level
+  }];
 });
 
 export default WORDS;

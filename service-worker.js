@@ -1,11 +1,13 @@
-const CACHE_NAME = "daily-english-v1";
+const CACHE_NAME = "daily-english-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./core.js",
+  "./speech.js",
   "./words.js",
+  "./phonetics.js",
   "./manifest.webmanifest",
   "./icons/icon-180.png",
   "./icons/icon-512.png"

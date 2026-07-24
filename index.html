@@ -29,6 +29,16 @@
           </div>
         </div>
         <p id="header-subtitle" class="header-subtitle">每天一點點，記得更久。</p>
+        <div class="voice-control" role="group" aria-label="美式發音聲音選擇">
+          <span class="voice-control-label">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+            美式發音
+          </span>
+          <span class="voice-segment">
+            <button class="voice-option is-active" type="button" data-voice-gender="female" aria-pressed="true">女聲</button>
+            <button class="voice-option" type="button" data-voice-gender="male" aria-pressed="false">男聲</button>
+          </span>
+        </div>
       </header>
 
       <main id="main-content">
@@ -76,6 +86,7 @@
                 <span class="review-face review-front" aria-hidden="false">
                   <span id="review-level" class="level-badge"></span>
                   <strong id="review-word"></strong>
+                  <span id="review-phonetic" class="review-phonetic"></span>
                   <span id="review-pos" class="review-pos"></span>
                   <span class="tap-prompt">
                     <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v16M5 11l7-7 7 7"/></svg>
@@ -88,6 +99,10 @@
                   <span id="review-example-zh" class="review-example-zh"></span>
                 </span>
               </span>
+            </button>
+            <button id="review-speak" class="review-speak-button" type="button" aria-pressed="false">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+              <span>播放美式發音</span>
             </button>
             <div id="review-actions" class="review-actions" hidden>
               <button id="forgot-button" class="answer-button forgot" type="button">
