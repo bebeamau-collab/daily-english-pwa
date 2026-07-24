@@ -10,7 +10,7 @@ import {
   getDueWords,
   normalizeState
 } from "./core.js";
-import { pickAmericanVoice, voicePitch } from "./speech.js";
+import { AUDIO_VOICES, getAudioPath, pickAmericanVoice, voicePitch } from "./speech.js";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -20,6 +20,7 @@ const voiceButtons = [...document.querySelectorAll("[data-voice-gender]")];
 const views = ["today", "review", "progress"];
 let availableVoices = [];
 let speakingText = "";
+let activeAudio = null;
 
 function getToday() {
   const requested = new URLSearchParams(location.search).get("date");
@@ -81,7 +82,12 @@ function updateSpeakButtons() {
   });
 }
 
-function speakText(text) {
+function finishSpeaking() {
+  speakingText = "";
+  updateSpeakButtons();
+}
+
+function speakWithDeviceVoice(text) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
     showToast("這個瀏覽器不支援語音播放");
     return;
@@ -98,13 +104,46 @@ function speakText(text) {
     speakingText = text;
     updateSpeakButtons();
   };
-  const finish = () => {
-    speakingText = "";
+  utterance.onend = finishSpeaking;
+  utterance.onerror = finishSpeaking;
+  speechSynthesis.speak(utterance);
+}
+
+function speakText(text, audioId, kind) {
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio = null;
+  }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+
+  const path = getAudioPath(audioId, kind, state.voiceGender);
+  if (!path) {
+    speakWithDeviceVoice(text);
+    return;
+  }
+
+  const audio = new Audio(path);
+  activeAudio = audio;
+  audio.preload = "auto";
+  audio.onplay = () => {
+    speakingText = text;
     updateSpeakButtons();
   };
-  utterance.onend = finish;
-  utterance.onerror = finish;
-  speechSynthesis.speak(utterance);
+  audio.onended = () => {
+    activeAudio = null;
+    finishSpeaking();
+  };
+  audio.onerror = () => {
+    activeAudio = null;
+    finishSpeaking();
+    showToast("自然語音尚未下載完成，暫用裝置語音");
+    speakWithDeviceVoice(text);
+  };
+  audio.play().catch(() => {
+    activeAudio = null;
+    finishSpeaking();
+    showToast("請再點一次播放");
+  });
 }
 
 function wordCard(item, index) {
@@ -157,11 +196,15 @@ function wordCard(item, index) {
     </div>`;
   const speakButton = article.querySelector(".speak-button");
   speakButton.dataset.speakText = item.word;
+  speakButton.dataset.audioId = item.audioId;
+  speakButton.dataset.audioKind = "word";
   speakButton.setAttribute("aria-label", `播放 ${item.word} 的美式發音`);
   const exampleButtons = article.querySelectorAll(".example-speak-button");
   [item.example, item.example2].forEach((example, exampleIndex) => {
     const plainExample = stripStrong(example);
     exampleButtons[exampleIndex].dataset.speakText = plainExample;
+    exampleButtons[exampleIndex].dataset.audioId = item.audioId;
+    exampleButtons[exampleIndex].dataset.audioKind = `example-${exampleIndex + 1}`;
     exampleButtons[exampleIndex].setAttribute("aria-label", `播放 ${item.word} 的例句 ${exampleIndex + 1}`);
   });
   return article;
@@ -203,6 +246,8 @@ function renderReview() {
   elements.reviewPhonetic.textContent = `KK ${currentReview.phonetic}`;
   elements.reviewPos.textContent = currentReview.partOfSpeech;
   elements.reviewSpeak.dataset.speakText = currentReview.word;
+  elements.reviewSpeak.dataset.audioId = currentReview.audioId;
+  elements.reviewSpeak.dataset.audioKind = "word";
   elements.reviewSpeak.setAttribute("aria-label", `播放 ${currentReview.word} 的美式發音`);
   elements.reviewZh.textContent = currentReview.zh;
   elements.reviewExample.innerHTML = currentReview.example;
@@ -211,6 +256,10 @@ function renderReview() {
   elements.reviewExampleZhSecond.textContent = currentReview.exampleZh2;
   elements.reviewSentenceFirst.dataset.speakText = stripStrong(currentReview.example);
   elements.reviewSentenceSecond.dataset.speakText = stripStrong(currentReview.example2);
+  elements.reviewSentenceFirst.dataset.audioId = currentReview.audioId;
+  elements.reviewSentenceSecond.dataset.audioId = currentReview.audioId;
+  elements.reviewSentenceFirst.dataset.audioKind = "example-1";
+  elements.reviewSentenceSecond.dataset.audioKind = "example-2";
   elements.reviewSentenceFirst.setAttribute("aria-label", `播放 ${currentReview.word} 的例句 1`);
   elements.reviewSentenceSecond.setAttribute("aria-label", `播放 ${currentReview.word} 的例句 2`);
 }
@@ -291,18 +340,20 @@ voiceButtons.forEach((button) => {
     state.voiceGender = button.dataset.voiceGender;
     saveState();
     renderVoiceControl();
-    showToast(`已切換為${state.voiceGender === "female" ? "女聲" : "男聲"}美式發音`);
+    showToast(`已切換為 ${AUDIO_VOICES[state.voiceGender].label}`);
   });
 });
 
 elements.wordList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-speak-text]");
-  if (button) speakText(button.dataset.speakText);
+  if (button) speakText(button.dataset.speakText, button.dataset.audioId, button.dataset.audioKind);
 });
-elements.reviewSpeak.addEventListener("click", () => speakText(elements.reviewSpeak.dataset.speakText));
+elements.reviewSpeak.addEventListener("click", () => {
+  speakText(elements.reviewSpeak.dataset.speakText, elements.reviewSpeak.dataset.audioId, elements.reviewSpeak.dataset.audioKind);
+});
 elements.reviewSentenceActions.addEventListener("click", (event) => {
   const button = event.target.closest("[data-speak-text]");
-  if (button) speakText(button.dataset.speakText);
+  if (button) speakText(button.dataset.speakText, button.dataset.audioId, button.dataset.audioKind);
 });
 
 elements.reviewCard.addEventListener("click", () => {

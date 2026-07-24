@@ -367,6 +367,9 @@ export const WORDS = RAW_WORDS.trim().split("\n").flatMap((line) => {
     topic: currentTopic,
     level
   }];
-});
+}).map((item, index) => ({
+  ...item,
+  audioId: String(index + 1).padStart(3, "0")
+}));
 
 export default WORDS;

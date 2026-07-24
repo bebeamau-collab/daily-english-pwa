@@ -11,7 +11,9 @@
 - `words.js`：300 個內建單字與片語（檔頭有新增教學）
 - `second-examples.js`：300 組第二例句與中文翻譯
 - `phonetics.js`：300 筆 KK 音標
-- `speech.js`：美式語音與女聲／男聲選擇邏輯
+- `speech.js`：Bella／Michael 美式語音與備用播放邏輯
+- `audio/`：自動產生的 Kokoro 美式發音 MP3
+- `scripts/generate_audio.py`：批次產生單字及例句音檔
 - `manifest.webmanifest`、`service-worker.js`：安裝與離線使用
 - `icons/`：180×180 與 512×512 PNG 圖示
 - `tests/`：核心功能自動測試
@@ -44,7 +46,11 @@
 
 ## 音標與發音
 
-每張今日單字卡與複習卡都有 KK 音標及兩組雙語例句。單字和兩句英文例句都有各自的播放按鈕，會使用裝置內建的美式英文語音，不需要串接網路 API；上方可以切換女聲或男聲，選擇會自動保存。不同 iPhone、iPad 或瀏覽器內建的語音名稱不完全相同，若沒有指定性別的美式聲線，APP 會改用裝置上可用的美式英文聲音。離線發音是否可用，取決於該聲音是否已下載到裝置。
+每張今日單字卡與複習卡都有 KK 音標及兩組雙語例句。單字和兩句英文例句都有各自的播放按鈕，上方可切換 **Bella 女聲**或 **Michael 男聲**，選擇會自動保存。
+
+語音使用 Apache 2.0 授權的 [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 預先產生，不需要在手機中放 API 金鑰。音檔第一次播放需要網路，成功播放後 service worker 會保存該音檔，之後可離線重播；如果自然語音檔暫時無法取得，APP 才會改用裝置內建的美式英文語音，而且不會再用變更音高的方式模擬性別。
+
+專案的 GitHub Actions 頁面中可手動執行 `Generate Bella and Michael audio`，它會產生 300 個單字及 600 句例句的兩組聲音，共 1,800 個 MP3，並自動提交到 `audio/bella/` 與 `audio/michael/`。
 
 ## 在電腦上預覽與測試（選用）
 
@@ -60,7 +66,7 @@ python3 -m http.server 4173
 npm test
 ```
 
-測試會檢查 300 筆字庫、600 組例句與音標、美式男女聲選擇、固定選字不重複、完成學習、翻卡排程、記得／忘記、精通、streak 與 JSON 持久化。
+測試會檢查 300 筆字庫、600 組例句與音標、Bella／Michael 音檔路徑、固定選字不重複、完成學習、翻卡排程、記得／忘記、精通、streak 與 JSON 持久化。
 
 ## 自己新增單字
 

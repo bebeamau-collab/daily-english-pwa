@@ -9,6 +9,11 @@ const VOICE_HINTS = {
   ]
 };
 
+export const AUDIO_VOICES = {
+  female: { id: "bella", label: "Bella 女聲" },
+  male: { id: "michael", label: "Michael 男聲" }
+};
+
 function normalize(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -33,5 +38,13 @@ export function pickAmericanVoice(voices, gender = "female") {
 }
 
 export function voicePitch(gender) {
-  return gender === "male" ? 0.9 : 1.05;
+  return 1;
+}
+
+export function getAudioPath(audioId, kind, gender = "female") {
+  const voice = AUDIO_VOICES[gender === "male" ? "male" : "female"];
+  const safeId = String(audioId || "").replace(/[^0-9]/g, "");
+  const validKinds = new Set(["word", "example-1", "example-2"]);
+  if (!safeId || !validKinds.has(kind)) return null;
+  return `./audio/${voice.id}/${safeId}-${kind}.mp3`;
 }
