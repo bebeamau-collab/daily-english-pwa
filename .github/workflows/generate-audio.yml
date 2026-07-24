@@ -2,6 +2,10 @@ name: Generate Bella and Michael audio
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/generate-audio.yml"
 
 permissions:
   contents: write
