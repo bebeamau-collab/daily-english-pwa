@@ -19,7 +19,7 @@ const navButtons = [...document.querySelectorAll(".nav-button")];
 const voiceButtons = [...document.querySelectorAll("[data-voice-gender]")];
 const views = ["today", "review", "progress"];
 let availableVoices = [];
-let speakingWord = "";
+let speakingText = "";
 
 function getToday() {
   const requested = new URLSearchParams(location.search).get("date");
@@ -74,32 +74,32 @@ function renderVoiceControl() {
 }
 
 function updateSpeakButtons() {
-  document.querySelectorAll("[data-speak-word]").forEach((button) => {
-    const active = speakingWord === button.dataset.speakWord;
+  document.querySelectorAll("[data-speak-text]").forEach((button) => {
+    const active = speakingText === button.dataset.speakText;
     button.classList.toggle("is-speaking", active);
     button.setAttribute("aria-pressed", String(active));
   });
 }
 
-function speakWord(word) {
+function speakText(text) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
     showToast("這個瀏覽器不支援語音播放");
     return;
   }
 
   speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(word);
+  const utterance = new SpeechSynthesisUtterance(text);
   const voice = pickAmericanVoice(availableVoices, state.voiceGender);
   utterance.lang = "en-US";
   utterance.rate = 0.86;
   utterance.pitch = voicePitch(state.voiceGender);
   if (voice) utterance.voice = voice;
   utterance.onstart = () => {
-    speakingWord = word;
+    speakingText = text;
     updateSpeakButtons();
   };
   const finish = () => {
-    speakingWord = "";
+    speakingText = "";
     updateSpeakButtons();
   };
   utterance.onend = finish;
@@ -132,12 +132,38 @@ function wordCard(item, index) {
     </div>
     <p class="word-meaning">${item.zh}</p>
     <div class="example-box">
-      <p>${item.example}</p>
-      <p>${item.exampleZh}</p>
+      <div class="example-item">
+        <div class="example-item-heading">
+          <span>例句 1</span>
+          <button class="example-speak-button" type="button" aria-pressed="false">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+            <span>播放</span>
+          </button>
+        </div>
+        <p>${item.example}</p>
+        <p>${item.exampleZh}</p>
+      </div>
+      <div class="example-item">
+        <div class="example-item-heading">
+          <span>例句 2</span>
+          <button class="example-speak-button" type="button" aria-pressed="false">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+            <span>播放</span>
+          </button>
+        </div>
+        <p>${item.example2}</p>
+        <p>${item.exampleZh2}</p>
+      </div>
     </div>`;
   const speakButton = article.querySelector(".speak-button");
-  speakButton.dataset.speakWord = item.word;
+  speakButton.dataset.speakText = item.word;
   speakButton.setAttribute("aria-label", `播放 ${item.word} 的美式發音`);
+  const exampleButtons = article.querySelectorAll(".example-speak-button");
+  [item.example, item.example2].forEach((example, exampleIndex) => {
+    const plainExample = stripStrong(example);
+    exampleButtons[exampleIndex].dataset.speakText = plainExample;
+    exampleButtons[exampleIndex].setAttribute("aria-label", `播放 ${item.word} 的例句 ${exampleIndex + 1}`);
+  });
   return article;
 }
 
@@ -171,15 +197,22 @@ function renderReview() {
   elements.reviewCard.querySelector(".review-front").setAttribute("aria-hidden", "false");
   elements.reviewCard.querySelector(".review-back").setAttribute("aria-hidden", "true");
   elements.reviewActions.hidden = true;
+  elements.reviewSentenceActions.hidden = true;
   elements.reviewLevel.textContent = currentReview.level;
   elements.reviewWord.textContent = currentReview.word;
   elements.reviewPhonetic.textContent = `KK ${currentReview.phonetic}`;
   elements.reviewPos.textContent = currentReview.partOfSpeech;
-  elements.reviewSpeak.dataset.speakWord = currentReview.word;
+  elements.reviewSpeak.dataset.speakText = currentReview.word;
   elements.reviewSpeak.setAttribute("aria-label", `播放 ${currentReview.word} 的美式發音`);
   elements.reviewZh.textContent = currentReview.zh;
   elements.reviewExample.innerHTML = currentReview.example;
   elements.reviewExampleZh.textContent = currentReview.exampleZh;
+  elements.reviewExampleSecond.innerHTML = currentReview.example2;
+  elements.reviewExampleZhSecond.textContent = currentReview.exampleZh2;
+  elements.reviewSentenceFirst.dataset.speakText = stripStrong(currentReview.example);
+  elements.reviewSentenceSecond.dataset.speakText = stripStrong(currentReview.example2);
+  elements.reviewSentenceFirst.setAttribute("aria-label", `播放 ${currentReview.word} 的例句 1`);
+  elements.reviewSentenceSecond.setAttribute("aria-label", `播放 ${currentReview.word} 的例句 2`);
 }
 
 function renderProgress() {
@@ -263,10 +296,14 @@ voiceButtons.forEach((button) => {
 });
 
 elements.wordList.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-speak-word]");
-  if (button) speakWord(button.dataset.speakWord);
+  const button = event.target.closest("[data-speak-text]");
+  if (button) speakText(button.dataset.speakText);
 });
-elements.reviewSpeak.addEventListener("click", () => speakWord(elements.reviewSpeak.dataset.speakWord));
+elements.reviewSpeak.addEventListener("click", () => speakText(elements.reviewSpeak.dataset.speakText));
+elements.reviewSentenceActions.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-speak-text]");
+  if (button) speakText(button.dataset.speakText);
+});
 
 elements.reviewCard.addEventListener("click", () => {
   const flipped = !elements.reviewCard.classList.contains("is-flipped");
@@ -274,6 +311,7 @@ elements.reviewCard.addEventListener("click", () => {
   elements.reviewCard.setAttribute("aria-pressed", String(flipped));
   elements.reviewCard.querySelector(".review-front").setAttribute("aria-hidden", String(flipped));
   elements.reviewCard.querySelector(".review-back").setAttribute("aria-hidden", String(!flipped));
+  elements.reviewSentenceActions.hidden = !flipped;
   elements.reviewActions.hidden = !flipped;
 });
 

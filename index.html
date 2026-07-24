@@ -95,8 +95,16 @@
                 </span>
                 <span class="review-face review-back" aria-hidden="true">
                   <span id="review-zh" class="review-zh"></span>
-                  <span id="review-example" class="review-example"></span>
-                  <span id="review-example-zh" class="review-example-zh"></span>
+                  <span class="review-example-group">
+                    <span class="review-example-label">例句 1</span>
+                    <span id="review-example" class="review-example"></span>
+                    <span id="review-example-zh" class="review-example-zh"></span>
+                  </span>
+                  <span class="review-example-group">
+                    <span class="review-example-label">例句 2</span>
+                    <span id="review-example-second" class="review-example"></span>
+                    <span id="review-example-zh-second" class="review-example-zh"></span>
+                  </span>
                 </span>
               </span>
             </button>
@@ -104,6 +112,16 @@
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
               <span>播放美式發音</span>
             </button>
+            <div id="review-sentence-actions" class="review-sentence-actions" hidden>
+              <button id="review-sentence-first" class="review-sentence-button" type="button" aria-pressed="false">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+                <span>播放例句 1</span>
+              </button>
+              <button id="review-sentence-second" class="review-sentence-button" type="button" aria-pressed="false">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+                <span>播放例句 2</span>
+              </button>
+            </div>
             <div id="review-actions" class="review-actions" hidden>
               <button id="forgot-button" class="answer-button forgot" type="button">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>

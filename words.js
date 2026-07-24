@@ -4,10 +4,12 @@
  * 2. 格式固定為：英文|詞性|中文意思|英文例句|例句中文翻譯|等級
  * 3. 欄位間請用半形直線「|」分隔；例句本身不要使用這個符號。
  * 4. level 可填 L1～L6；生活口語片語請填「口語」。
+ * 5. 第二組例句請在 second-examples.js 加入相同的英文鍵值。
  * 程式會自動把例句中第一次出現的英文單字／片語加上 <strong> 粗體標籤。
  */
 
 import { PHONETICS } from "./phonetics.js";
+import { SECOND_EXAMPLES } from "./second-examples.js";
 
 const RAW_WORDS = `
 #飲食點餐
@@ -352,6 +354,7 @@ export const WORDS = RAW_WORDS.trim().split("\n").flatMap((line) => {
     return [];
   }
   const [word, partOfSpeech, zh, example, exampleZh, level] = trimmed.split("|");
+  const second = SECOND_EXAMPLES[word];
   return [{
     word,
     partOfSpeech,
@@ -359,6 +362,8 @@ export const WORDS = RAW_WORDS.trim().split("\n").flatMap((line) => {
     phonetic: PHONETICS[word],
     example: boldFirst(example, word),
     exampleZh,
+    example2: boldFirst(second.example2, word),
+    exampleZh2: second.exampleZh2,
     topic: currentTopic,
     level
   }];

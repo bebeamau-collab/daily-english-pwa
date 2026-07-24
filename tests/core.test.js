@@ -13,6 +13,7 @@ import {
 } from "../core.js";
 import { WORDS } from "../words.js";
 import { PHONETICS } from "../phonetics.js";
+import { SECOND_EXAMPLES } from "../second-examples.js";
 import { pickAmericanVoice, voicePitch } from "../speech.js";
 
 test("字庫完整且每日洗牌在一輪內不重複", () => {
@@ -34,15 +35,18 @@ test("字庫完整且每日洗牌在一輪內不重複", () => {
 test("每筆資料都有必要欄位且例句含粗體單字", () => {
   const topics = new Set();
   WORDS.forEach((item) => {
-    ["word", "partOfSpeech", "zh", "phonetic", "example", "exampleZh", "topic", "level"].forEach((key) => {
+    ["word", "partOfSpeech", "zh", "phonetic", "example", "exampleZh", "example2", "exampleZh2", "topic", "level"].forEach((key) => {
       assert.ok(item[key], `${item.word || "未知"} 缺少 ${key}`);
     });
     assert.match(item.example, /<strong>.+<\/strong>/);
+    assert.match(item.example2, /<strong>.+<\/strong>/);
+    assert.notEqual(item.example2, item.example);
     topics.add(item.topic);
   });
   assert.equal(topics.size, 12);
   assert.ok(WORDS.some((item) => item.level === "口語"));
   assert.equal(Object.keys(PHONETICS).length, 300);
+  assert.equal(Object.keys(SECOND_EXAMPLES).length, 300);
   assert.ok(WORDS.every((item) => /^\/.+\/$/.test(item.phonetic)));
 });
 
