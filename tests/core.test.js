@@ -14,7 +14,7 @@ import {
 import { WORDS } from "../words.js";
 import { PHONETICS } from "../phonetics.js";
 import { SECOND_EXAMPLES } from "../second-examples.js";
-import { pickAmericanVoice, voicePitch } from "../speech.js";
+import { AUDIO_VOICES, getAudioPath, pickAmericanVoice, voicePitch } from "../speech.js";
 
 test("字庫完整且每日洗牌在一輪內不重複", () => {
   assert.ok(WORDS.length >= 300);
@@ -35,7 +35,7 @@ test("字庫完整且每日洗牌在一輪內不重複", () => {
 test("每筆資料都有必要欄位且例句含粗體單字", () => {
   const topics = new Set();
   WORDS.forEach((item) => {
-    ["word", "partOfSpeech", "zh", "phonetic", "example", "exampleZh", "example2", "exampleZh2", "topic", "level"].forEach((key) => {
+    ["word", "partOfSpeech", "zh", "phonetic", "example", "exampleZh", "example2", "exampleZh2", "topic", "level", "audioId"].forEach((key) => {
       assert.ok(item[key], `${item.word || "未知"} 缺少 ${key}`);
     });
     assert.match(item.example, /<strong>.+<\/strong>/);
@@ -95,7 +95,7 @@ test("localStorage JSON 往返可持久化，streak 中斷歸零", () => {
   assert.equal(calculateStreak(["2026-07-21", "2026-07-22", "2026-07-23"], "2026-07-23"), 3);
 });
 
-test("美式語音會優先依男女聲選擇並提供備用", () => {
+test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", () => {
   const voices = [
     { name: "Samantha", voiceURI: "com.apple.speech.synthesis.voice.samantha", lang: "en-US", default: true },
     { name: "Alex", voiceURI: "com.apple.speech.synthesis.voice.alex", lang: "en-US", default: false },
@@ -104,5 +104,11 @@ test("美式語音會優先依男女聲選擇並提供備用", () => {
   assert.equal(pickAmericanVoice(voices, "female").name, "Samantha");
   assert.equal(pickAmericanVoice(voices, "male").name, "Alex");
   assert.equal(pickAmericanVoice([{ name: "US Voice", lang: "en-US", default: true }], "male").name, "US Voice");
-  assert.ok(voicePitch("male") < voicePitch("female"));
+  assert.equal(AUDIO_VOICES.female.id, "bella");
+  assert.equal(AUDIO_VOICES.male.id, "michael");
+  assert.equal(voicePitch("male"), 1);
+  assert.equal(voicePitch("female"), 1);
+  assert.equal(getAudioPath("006", "word", "female"), "./audio/bella/006-word.mp3");
+  assert.equal(getAudioPath("006", "example-2", "male"), "./audio/michael/006-example-2.mp3");
+  assert.equal(getAudioPath("006", "unknown", "male"), null);
 });
