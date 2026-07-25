@@ -48,9 +48,12 @@
 - 複習卡翻面後會顯示兩組雙語例句，並顯示兩個完整例句播放按鈕。
 - 女聲／男聲切換按鈕皆符合至少 44×44px 的手機觸控範圍，並有鍵盤焦點與 `aria-pressed` 狀態。
 - Kokoro 自動產音工作完整通過；Bella 900 個、Michael 900 個，共 1,800 個 MP3。
+- 完整故事產音工作通過；Bella 30 篇、Michael 30 篇，共 60 個完整故事 MP3。
+- 故事音檔實際容量約為 Bella 9.0 MB、Michael 9.6 MB；今天的第 26 篇各約 0.47–0.50 MB。
 - 已抽查兩種聲音的第一個與最後一個檔案，四個檔案均存在 GitHub 且具有獨立 blob SHA。
 - GitHub Pages 最終發布工作成功；Bella 與 Michael 的正式 MP3 網址均可載入，不再回傳 404。
 - 在正式 APP 內分別播放 `meal` 的 Bella 與 Michael 音檔，兩次播放按鈕的 `aria-pressed` 都正確變為 `true`。
+- 在正式 APP 內分別播放〈The Last Ticket〉的 Bella 與 Michael 完整音檔，兩次播放按鈕的 `aria-pressed` 均正確變為 `true`，且未退回裝置語音。
 - 備用裝置語音速度設為適合學習的 0.86 倍，語系固定為 `en-US`，不再變更音高模擬性別。
 - `speech.js`、`phonetics.js`、`second-examples.js` 已加入 service worker 的離線快取清單。
 - 同來源 MP3 第一次成功播放後會由 service worker 的 GET 快取流程保存，供之後離線重播。
