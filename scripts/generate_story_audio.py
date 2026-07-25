@@ -29,7 +29,7 @@ def load_stories() -> list[tuple[str, str]]:
 
     stories = []
     pattern = re.compile(
-        r"@@(\d{2})\nTITLE:(.+)\nEN:\n(.*?)\nZH:\n(.*?)(?=\n@@\d{2}\n|\Z)",
+        r"@@(\d{2})\nTITLE:([^\n]+)\nEN:\n(.*?)\nZH:\n(.*?)(?=\n@@\d{2}\n|\Z)",
         re.S,
     )
     for story_id, title, english, _ in pattern.findall(raw_match.group(1)):
