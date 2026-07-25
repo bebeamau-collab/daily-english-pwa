@@ -1,0 +1,50 @@
+name: Generate complete story audio
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "stories-data.js"
+      - "scripts/generate_story_audio.py"
+      - ".github/workflows/generate-story-audio.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-kokoro-story-audio
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install speech tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y espeak-ng ffmpeg
+          python -m pip install "kokoro>=0.9,<1" soundfile
+
+      - name: Generate Bella stories
+        run: python scripts/generate_story_audio.py --voice bella
+
+      - name: Generate Michael stories
+        run: python scripts/generate_story_audio.py --voice michael
+
+      - name: Save complete story audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio/bella/stories audio/michael/stories
+          git diff --cached --quiet || git commit -m "Add complete Bella and Michael story audio"
+          git push

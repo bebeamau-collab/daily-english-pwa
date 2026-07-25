@@ -64,14 +64,15 @@
               <div>
                 <p class="story-kicker">TODAY'S STORY</p>
                 <h3 id="daily-story-title"></h3>
+                <span id="story-word-count" class="story-word-count"></span>
               </div>
               <button id="story-speak" class="story-action-button" type="button" aria-pressed="false">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
-                <span>播放文章</span>
+                <span>播放完整文章</span>
               </button>
             </div>
-            <p class="story-hint">點擊有底線的英文，可快速前往該單字。</p>
-            <p id="daily-story-english" class="story-text" lang="en-US"></p>
+            <p class="story-hint">閱讀完整情節；點擊有底線的英文，可快速前往該單字。</p>
+            <div id="daily-story-english" class="story-text" lang="en-US"></div>
             <button
               id="story-translation-toggle"
               class="story-action-button translation-toggle"
@@ -84,7 +85,7 @@
             </button>
             <div id="daily-story-translation" class="story-translation" hidden>
               <p class="translation-note">每日單字保留英文，方便對照原文。</p>
-              <p id="daily-story-chinese" class="story-text story-text-zh"></p>
+              <div id="daily-story-chinese" class="story-text story-text-zh"></div>
             </div>
           </article>
           <div id="word-list" class="word-list"></div>

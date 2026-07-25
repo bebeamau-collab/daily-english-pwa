@@ -8,13 +8,15 @@
 - `styles.css`：手機優先樣式、深色模式與安全區域
 - `app.js`：畫面互動與資料保存
 - `core.js`：每日選字、間隔複習、streak 核心邏輯
-- `story.js`：依日期與今日單字建立固定情境文章
+- `stories-data.js`：30 篇有角色、事件轉折與結尾的每日故事
+- `story.js`：依日期選出固定故事、計算字數並連結今日單字
 - `words.js`：300 個內建單字與片語（檔頭有新增教學）
 - `second-examples.js`：300 組第二例句與中文翻譯
 - `phonetics.js`：300 筆 KK 音標
 - `speech.js`：Bella／Michael 美式語音與備用播放邏輯
 - `audio/`：自動產生的 Kokoro 美式發音 MP3
 - `scripts/generate_audio.py`：批次產生單字及例句音檔
+- `scripts/generate_story_audio.py`：批次產生 Bella／Michael 完整故事音檔
 - `manifest.webmanifest`、`service-worker.js`：安裝與離線使用
 - `icons/`：180×180 與 512×512 PNG 圖示
 - `tests/`：核心功能自動測試
@@ -49,11 +51,13 @@
 
 每張今日單字卡與複習卡都有 KK 音標及兩組雙語例句。單字和兩句英文例句都有各自的播放按鈕，上方可切換 **Bella 女聲**或 **Michael 男聲**，選擇會自動保存。
 
-每日 10 個單字上方會顯示一篇 **TODAY'S STORY**。文章中有底線的英文都可以點擊，APP 會平滑移到對應單字卡；「顯示中文翻譯」會展開中文內容，但 10 個每日單字仍保留英文。「播放文章」會使用目前選擇的 Bella 或 Michael，依序朗讀文章中的 10 句，因此不需要另外產生文章音檔。
+每日 10 個單字上方會顯示一篇 **TODAY'S STORY**。這不是把十句例句接在一起，而是有角色、事件、轉折與結尾的連貫閱讀文章。文章以段落呈現並標示約略英文字數；有底線的英文都可以點擊，APP 會平滑移到對應單字卡。「顯示中文翻譯」會展開對應段落，但 10 個每日單字仍保留英文。
+
+30 篇故事依固定日期順序循環，每篇對應當天固定的 10 個單字；輪完 300 字前不會重複。這種固定配對讓同一天重新開啟時，單字、故事與音檔都保持一致，也能在完全離線的純前端 APP 中提供真正連貫的文章。
 
 語音使用 Apache 2.0 授權的 [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 預先產生，不需要在手機中放 API 金鑰。音檔第一次播放需要網路，成功播放後 service worker 會保存該音檔，之後可離線重播；如果自然語音檔暫時無法取得，APP 才會改用裝置內建的美式英文語音，而且不會再用變更音高的方式模擬性別。
 
-專案的 GitHub Actions 頁面中可手動執行 `Generate Bella and Michael audio`，它會產生 300 個單字及 600 句例句的兩組聲音，共 1,800 個 MP3，並自動提交到 `audio/bella/` 與 `audio/michael/`。
+專案的 GitHub Actions 頁面中可手動執行 `Generate Bella and Michael audio`，它會產生 300 個單字及 600 句例句的兩組聲音，共 1,800 個 MP3。另一個 `Generate complete story audio` 工作會為 30 篇完整故事各產生 Bella 與 Michael 版本，共 60 個 MP3。所有音檔都會自動提交到 `audio/`；第一次播放需要網路，成功播放後可由 service worker 保存供離線重播。
 
 ## 在電腦上預覽與測試（選用）
 
@@ -69,8 +73,8 @@ python3 -m http.server 4173
 npm test
 ```
 
-測試會檢查 300 筆字庫、600 組例句與音標、每日情境文章、Bella／Michael 音檔路徑、固定選字不重複、完成學習、翻卡排程、記得／忘記、精通、streak 與 JSON 持久化。
+測試會檢查 300 筆字庫、600 組例句與音標、30 篇連貫故事及中英文單字覆蓋、Bella／Michael 音檔路徑、固定選字不重複、完成學習、翻卡排程、記得／忘記、精通、streak 與 JSON 持久化。
 
 ## 自己新增單字
 
-打開 `words.js`，依檔案最上方註解的格式新增一行，並在 `second-examples.js` 加入第二組例句。兩句英文例句都要原樣包含該單字或片語，程式才會自動將它粗體顯示並放入每日文章；也請在 `phonetics.js` 加入相同英文鍵值的 KK 音標。新增後也要把 `service-worker.js` 的 `CACHE_NAME` 改成新版本（例如 `daily-english-v6`），已安裝的手機才會更快更新。
+打開 `words.js`，依檔案最上方註解的格式新增一行，並在 `second-examples.js` 加入第二組例句。兩句英文例句都要原樣包含該單字或片語，程式才能自動粗體顯示；也請在 `phonetics.js` 加入相同英文鍵值的 KK 音標。若更動每日選字，還要同步修改 `stories-data.js` 中對應故事，讓英文與中文段落都原樣保留該日十個英文單字。最後把 `service-worker.js` 的 `CACHE_NAME` 改成新版本，已安裝的手機才會更快更新。

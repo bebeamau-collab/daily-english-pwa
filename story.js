@@ -1,32 +1,47 @@
-const STORY_TITLES = [
-  "A Day of Small Adventures",
-  "Ten Moments in Everyday Life",
-  "Useful English in Real Life"
-];
+import { RAW_STORIES } from "./stories-data.js";
+import { WORDS_PER_DAY, dayNumber } from "./core.js";
 
-function plainText(value) {
-  return value.replace(/<\/?strong>/g, "");
+function parseStories(raw) {
+  return [...raw.matchAll(
+    /@@(\d{2})\nTITLE:(.+)\nEN:\n([\s\S]*?)\nZH:\n([\s\S]*?)(?=\n@@\d{2}\n|$)/g
+  )].map((match) => ({
+    id: match[1],
+    title: match[2].trim(),
+    englishParagraphs: match[3].trim().split(/\n{2,}/),
+    chineseParagraphs: match[4].trim().split(/\n{2,}/)
+  }));
 }
 
-function dateSeed(dateString) {
-  return [...dateString].reduce((total, character) => total + character.charCodeAt(0), 0);
+export const STORIES = parseStories(RAW_STORIES);
+
+export function getStoryIndex(dateString) {
+  const index = dayNumber(dateString) - dayNumber("2026-01-01");
+  return ((index % STORIES.length) + STORIES.length) % STORIES.length;
 }
 
 export function createDailyStory(words, dateString) {
-  const seed = dateSeed(dateString);
-  const sentences = words.map((item, index) => {
-    const useSecondExample = (seed + index) % 2 === 0;
+  const story = STORIES[getStoryIndex(dateString)];
+  const english = story.englishParagraphs.join(" ");
+  return {
+    ...story,
+    words,
+    wordCount: (english.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/g) || []).length
+  };
+}
+
+export function getStoryAudioText(story) {
+  return `${story.title}. ${story.englishParagraphs.join(" ")}`;
+}
+
+export function validateStories(words) {
+  return STORIES.map((story, index) => {
+    const dailyWords = words.slice(index * WORDS_PER_DAY, index * WORDS_PER_DAY + WORDS_PER_DAY);
+    const english = story.englishParagraphs.join(" ").toLocaleLowerCase("en-US");
+    const chinese = story.chineseParagraphs.join(" ").toLocaleLowerCase("en-US");
     return {
-      word: item.word,
-      audioId: item.audioId,
-      audioKind: useSecondExample ? "example-2" : "example-1",
-      english: plainText(useSecondExample ? item.example2 : item.example),
-      chinese: useSecondExample ? item.exampleZh2 : item.exampleZh
+      id: story.id,
+      missingEnglish: dailyWords.filter((item) => !english.includes(item.word.toLocaleLowerCase("en-US"))).map((item) => item.word),
+      missingChinese: dailyWords.filter((item) => !chinese.includes(item.word.toLocaleLowerCase("en-US"))).map((item) => item.word)
     };
   });
-
-  return {
-    title: STORY_TITLES[seed % STORY_TITLES.length],
-    sentences
-  };
 }

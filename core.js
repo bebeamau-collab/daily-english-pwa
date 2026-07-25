@@ -2,6 +2,7 @@ export const STORAGE_KEY = "dailyEnglishPwaStateV1";
 export const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
 export const WORDS_PER_DAY = 10;
 export const BASE_SEED = 20260723;
+export const STORY_SEED_OFFSET = 6;
 
 export function formatLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -48,10 +49,9 @@ export function seededShuffle(items, seed) {
 
 export function getDailyWords(words, dateString) {
   const groupsPerCycle = Math.ceil(words.length / WORDS_PER_DAY);
-  const index = Math.max(0, dayNumber(dateString) - dayNumber("2026-01-01"));
-  const cycle = Math.floor(index / groupsPerCycle);
-  const group = index % groupsPerCycle;
-  const shuffled = seededShuffle(words, BASE_SEED + cycle);
+  const index = dayNumber(dateString) - dayNumber("2026-01-01");
+  const group = ((index % groupsPerCycle) + groupsPerCycle) % groupsPerCycle;
+  const shuffled = seededShuffle(words, BASE_SEED + STORY_SEED_OFFSET);
   return shuffled.slice(group * WORDS_PER_DAY, group * WORDS_PER_DAY + WORDS_PER_DAY);
 }
 

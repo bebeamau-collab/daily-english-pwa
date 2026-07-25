@@ -10,8 +10,8 @@ import {
   getDueWords,
   normalizeState
 } from "./core.js";
-import { AUDIO_VOICES, getAudioPath, pickAmericanVoice, voicePitch } from "./speech.js";
-import { createDailyStory } from "./story.js";
+import { AUDIO_VOICES, getAudioPath, getStoryAudioPath, pickAmericanVoice, voicePitch } from "./speech.js";
+import { createDailyStory, getStoryAudioText } from "./story.js";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -102,7 +102,7 @@ function stopActivePlayback() {
   finishSpeaking();
 }
 
-function speakWithDeviceVoice(text) {
+function speakWithDeviceVoice(text, speakKey = text) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
     showToast("這個瀏覽器不支援語音播放");
     return;
@@ -116,7 +116,7 @@ function speakWithDeviceVoice(text) {
   utterance.pitch = voicePitch(state.voiceGender);
   if (voice) utterance.voice = voice;
   utterance.onstart = () => {
-    speakingText = text;
+    speakingText = speakKey;
     updateSpeakButtons();
   };
   utterance.onend = finishSpeaking;
@@ -157,7 +157,7 @@ function speakText(text, audioId, kind) {
   });
 }
 
-function playStoryAudio(sentences) {
+function playStoryAudio(story) {
   if (speakingText === STORY_SPEAK_KEY) {
     stopActivePlayback();
     showToast("已停止文章朗讀");
@@ -165,54 +165,29 @@ function playStoryAudio(sentences) {
   }
 
   stopActivePlayback();
-  const sequenceToken = audioSequenceToken;
-  const audio = new Audio();
+  const text = getStoryAudioText(story);
+  const audio = new Audio(getStoryAudioPath(story.id, state.voiceGender));
   activeAudio = audio;
-  speakingText = STORY_SPEAK_KEY;
-  updateSpeakButtons();
-
-  let index = 0;
-  let showedError = false;
-  const playNext = () => {
-    if (sequenceToken !== audioSequenceToken) return;
-    if (index >= sentences.length) {
-      activeAudio = null;
-      finishSpeaking();
-      return;
-    }
-
-    const sentence = sentences[index];
-    index += 1;
-    const path = getAudioPath(sentence.audioId, sentence.audioKind, state.voiceGender);
-    if (!path) {
-      playNext();
-      return;
-    }
-    let advanced = false;
-    const continueOnce = () => {
-      if (advanced) return;
-      advanced = true;
-      playNext();
-    };
-    audio.src = path;
-    audio.play().catch(() => {
-      if (!showedError) {
-        showedError = true;
-        showToast("文章音檔載入失敗，請稍後再試");
-      }
-      continueOnce();
-    });
-    audio.onended = continueOnce;
-    audio.onerror = () => {
-      if (!showedError) {
-        showedError = true;
-        showToast("部分音檔暫時無法播放，已繼續下一句");
-      }
-      continueOnce();
-    };
+  audio.preload = "auto";
+  audio.onplay = () => {
+    speakingText = STORY_SPEAK_KEY;
+    updateSpeakButtons();
   };
-
-  playNext();
+  audio.onended = () => {
+    activeAudio = null;
+    finishSpeaking();
+  };
+  let fallbackStarted = false;
+  const useFallbackVoice = () => {
+    if (fallbackStarted) return;
+    fallbackStarted = true;
+    activeAudio = null;
+    finishSpeaking();
+    showToast("完整故事音檔尚未準備好，暫用裝置語音");
+    speakWithDeviceVoice(text, STORY_SPEAK_KEY);
+  };
+  audio.onerror = useFallbackVoice;
+  audio.play().catch(useFallbackVoice);
 }
 
 function createStoryWordButton(word, audioId, displayedWord = word) {
@@ -225,37 +200,31 @@ function createStoryWordButton(word, audioId, displayedWord = word) {
   return button;
 }
 
-function renderEnglishStory(container, sentences) {
-  const fragment = document.createDocumentFragment();
-  sentences.forEach((sentence, index) => {
-    const wrapper = document.createElement("span");
-    wrapper.className = "story-sentence";
-    const lowerEnglish = sentence.english.toLocaleLowerCase("en-US");
-    const wordStart = lowerEnglish.indexOf(sentence.word.toLocaleLowerCase("en-US"));
-
-    if (wordStart === -1) {
-      wrapper.append(sentence.english);
-    } else {
-      const wordEnd = wordStart + sentence.word.length;
-      wrapper.append(sentence.english.slice(0, wordStart));
-      wrapper.append(createStoryWordButton(sentence.word, sentence.audioId, sentence.english.slice(wordStart, wordEnd)));
-      wrapper.append(sentence.english.slice(wordEnd));
-    }
-    if (index < sentences.length - 1) wrapper.append(" ");
-    fragment.append(wrapper);
-  });
-  container.replaceChildren(fragment);
+function keywordPattern(words) {
+  const alternatives = words
+    .map((item) => item.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .sort((a, b) => b.length - a.length);
+  return new RegExp(`\\b(${alternatives.join("|")})\\b`, "gi");
 }
 
-function renderChineseStory(container, sentences) {
+function renderStoryParagraphs(container, paragraphs, words) {
   const fragment = document.createDocumentFragment();
-  sentences.forEach((sentence, index) => {
-    const wrapper = document.createElement("span");
-    wrapper.className = "story-sentence";
-    wrapper.append(createStoryWordButton(sentence.word, sentence.audioId));
-    wrapper.append(`：${sentence.chinese}`);
-    if (index < sentences.length - 1) wrapper.append(" ");
-    fragment.append(wrapper);
+  const byWord = new Map(words.map((item) => [item.word.toLocaleLowerCase("en-US"), item]));
+  paragraphs.forEach((text) => {
+    const paragraph = document.createElement("p");
+    let lastIndex = 0;
+    for (const match of text.matchAll(keywordPattern(words))) {
+      paragraph.append(text.slice(lastIndex, match.index));
+      const item = byWord.get(match[0].toLocaleLowerCase("en-US"));
+      if (item) {
+        paragraph.append(createStoryWordButton(item.word, item.audioId, match[0]));
+      } else {
+        paragraph.append(match[0]);
+      }
+      lastIndex = match.index + match[0].length;
+    }
+    paragraph.append(text.slice(lastIndex));
+    fragment.append(paragraph);
   });
   container.replaceChildren(fragment);
 }
@@ -263,8 +232,9 @@ function renderChineseStory(container, sentences) {
 function renderDailyStory() {
   const story = createDailyStory(dailyWords, today);
   elements.dailyStoryTitle.textContent = story.title;
-  renderEnglishStory(elements.dailyStoryEnglish, story.sentences);
-  renderChineseStory(elements.dailyStoryChinese, story.sentences);
+  elements.storyWordCount.textContent = `約 ${story.wordCount} 個英文字`;
+  renderStoryParagraphs(elements.dailyStoryEnglish, story.englishParagraphs, dailyWords);
+  renderStoryParagraphs(elements.dailyStoryChinese, story.chineseParagraphs, dailyWords);
   elements.storySpeak.dataset.speakText = STORY_SPEAK_KEY;
   elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
   return story;
@@ -479,7 +449,7 @@ elements.wordList.addEventListener("click", (event) => {
 });
 elements.storySpeak.addEventListener("click", () => {
   const story = createDailyStory(dailyWords, today);
-  playStoryAudio(story.sentences);
+  playStoryAudio(story);
 });
 elements.storyTranslationToggle.addEventListener("click", () => {
   const willOpen = elements.dailyStoryTranslation.hidden;

@@ -48,3 +48,8 @@ export function getAudioPath(audioId, kind, gender = "female") {
   if (!safeId || !validKinds.has(kind)) return null;
   return `./audio/${voice.id}/${safeId}-${kind}.mp3`;
 }
+
+export function getStoryAudioPath(storyId, gender = "female") {
+  const voice = AUDIO_VOICES[gender === "male" ? "male" : "female"];
+  return /^\d{2}$/.test(storyId || "") ? `./audio/${voice.id}/stories/${storyId}.mp3` : null;
+}
