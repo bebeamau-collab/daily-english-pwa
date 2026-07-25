@@ -59,6 +59,34 @@
               <p>這 10 個字已排入明天的複習。</p>
             </div>
           </div>
+          <article class="story-card" aria-labelledby="daily-story-title">
+            <div class="story-card-heading">
+              <div>
+                <p class="story-kicker">TODAY'S STORY</p>
+                <h3 id="daily-story-title"></h3>
+              </div>
+              <button id="story-speak" class="story-action-button" type="button" aria-pressed="false">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+                <span>播放文章</span>
+              </button>
+            </div>
+            <p class="story-hint">點擊有底線的英文，可快速前往該單字。</p>
+            <p id="daily-story-english" class="story-text" lang="en-US"></p>
+            <button
+              id="story-translation-toggle"
+              class="story-action-button translation-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="daily-story-translation"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M6 5c.5 3 2.5 5.5 5.5 7M11 5c-.6 3-2.7 5.7-6.5 8M14 10h6l-3 10m-1.8-4h3.6"/></svg>
+              <span>顯示中文翻譯</span>
+            </button>
+            <div id="daily-story-translation" class="story-translation" hidden>
+              <p class="translation-note">每日單字保留英文，方便對照原文。</p>
+              <p id="daily-story-chinese" class="story-text story-text-zh"></p>
+            </div>
+          </article>
           <div id="word-list" class="word-list"></div>
           <button id="complete-today" class="primary-button" type="button">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12.5 4 4L19 6.8"/></svg>

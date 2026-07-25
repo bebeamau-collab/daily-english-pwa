@@ -1,4 +1,4 @@
-const CACHE_NAME = "daily-english-v4";
+const CACHE_NAME = "daily-english-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "./app.js",
   "./core.js",
   "./speech.js",
+  "./story.js",
   "./words.js",
   "./second-examples.js",
   "./phonetics.js",

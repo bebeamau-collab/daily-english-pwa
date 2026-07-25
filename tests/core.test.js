@@ -15,6 +15,7 @@ import { WORDS } from "../words.js";
 import { PHONETICS } from "../phonetics.js";
 import { SECOND_EXAMPLES } from "../second-examples.js";
 import { AUDIO_VOICES, getAudioPath, pickAmericanVoice, voicePitch } from "../speech.js";
+import { createDailyStory } from "../story.js";
 
 test("字庫完整且每日洗牌在一輪內不重複", () => {
   assert.ok(WORDS.length >= 300);
@@ -111,4 +112,19 @@ test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", ()
   assert.equal(getAudioPath("006", "word", "female"), "./audio/bella/006-word.mp3");
   assert.equal(getAudioPath("006", "example-2", "male"), "./audio/michael/006-example-2.mp3");
   assert.equal(getAudioPath("006", "unknown", "male"), null);
+});
+
+test("每日情境文章固定帶入全部 10 個單字並保留英文翻譯標記", () => {
+  const date = "2026-07-25";
+  const daily = getDailyWords(WORDS, date);
+  const first = createDailyStory(daily, date);
+  const second = createDailyStory(daily, date);
+  assert.deepEqual(first, second);
+  assert.equal(first.sentences.length, 10);
+  first.sentences.forEach((sentence, index) => {
+    assert.equal(sentence.word, daily[index].word);
+    assert.match(sentence.english.toLocaleLowerCase("en-US"), new RegExp(daily[index].word.toLocaleLowerCase("en-US").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.ok(["example-1", "example-2"].includes(sentence.audioKind));
+    assert.ok(sentence.chinese);
+  });
 });

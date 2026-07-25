@@ -11,6 +11,7 @@ import {
   normalizeState
 } from "./core.js";
 import { AUDIO_VOICES, getAudioPath, pickAmericanVoice, voicePitch } from "./speech.js";
+import { createDailyStory } from "./story.js";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -21,6 +22,10 @@ const views = ["today", "review", "progress"];
 let availableVoices = [];
 let speakingText = "";
 let activeAudio = null;
+let audioSequenceToken = 0;
+let storyHighlightTimeout = null;
+
+const STORY_SPEAK_KEY = "__daily-story__";
 
 function getToday() {
   const requested = new URLSearchParams(location.search).get("date");
@@ -87,6 +92,16 @@ function finishSpeaking() {
   updateSpeakButtons();
 }
 
+function stopActivePlayback() {
+  audioSequenceToken += 1;
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio = null;
+  }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  finishSpeaking();
+}
+
 function speakWithDeviceVoice(text) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
     showToast("這個瀏覽器不支援語音播放");
@@ -110,11 +125,7 @@ function speakWithDeviceVoice(text) {
 }
 
 function speakText(text, audioId, kind) {
-  if (activeAudio) {
-    activeAudio.pause();
-    activeAudio = null;
-  }
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  stopActivePlayback();
 
   const path = getAudioPath(audioId, kind, state.voiceGender);
   if (!path) {
@@ -146,9 +157,124 @@ function speakText(text, audioId, kind) {
   });
 }
 
+function playStoryAudio(sentences) {
+  if (speakingText === STORY_SPEAK_KEY) {
+    stopActivePlayback();
+    showToast("已停止文章朗讀");
+    return;
+  }
+
+  stopActivePlayback();
+  const sequenceToken = audioSequenceToken;
+  const audio = new Audio();
+  activeAudio = audio;
+  speakingText = STORY_SPEAK_KEY;
+  updateSpeakButtons();
+
+  let index = 0;
+  let showedError = false;
+  const playNext = () => {
+    if (sequenceToken !== audioSequenceToken) return;
+    if (index >= sentences.length) {
+      activeAudio = null;
+      finishSpeaking();
+      return;
+    }
+
+    const sentence = sentences[index];
+    index += 1;
+    const path = getAudioPath(sentence.audioId, sentence.audioKind, state.voiceGender);
+    if (!path) {
+      playNext();
+      return;
+    }
+    let advanced = false;
+    const continueOnce = () => {
+      if (advanced) return;
+      advanced = true;
+      playNext();
+    };
+    audio.src = path;
+    audio.play().catch(() => {
+      if (!showedError) {
+        showedError = true;
+        showToast("文章音檔載入失敗，請稍後再試");
+      }
+      continueOnce();
+    });
+    audio.onended = continueOnce;
+    audio.onerror = () => {
+      if (!showedError) {
+        showedError = true;
+        showToast("部分音檔暫時無法播放，已繼續下一句");
+      }
+      continueOnce();
+    };
+  };
+
+  playNext();
+}
+
+function createStoryWordButton(word, audioId, displayedWord = word) {
+  const button = document.createElement("button");
+  button.className = "story-word-link";
+  button.type = "button";
+  button.dataset.wordTarget = audioId;
+  button.textContent = displayedWord;
+  button.setAttribute("aria-label", `前往單字 ${word}`);
+  return button;
+}
+
+function renderEnglishStory(container, sentences) {
+  const fragment = document.createDocumentFragment();
+  sentences.forEach((sentence, index) => {
+    const wrapper = document.createElement("span");
+    wrapper.className = "story-sentence";
+    const lowerEnglish = sentence.english.toLocaleLowerCase("en-US");
+    const wordStart = lowerEnglish.indexOf(sentence.word.toLocaleLowerCase("en-US"));
+
+    if (wordStart === -1) {
+      wrapper.append(sentence.english);
+    } else {
+      const wordEnd = wordStart + sentence.word.length;
+      wrapper.append(sentence.english.slice(0, wordStart));
+      wrapper.append(createStoryWordButton(sentence.word, sentence.audioId, sentence.english.slice(wordStart, wordEnd)));
+      wrapper.append(sentence.english.slice(wordEnd));
+    }
+    if (index < sentences.length - 1) wrapper.append(" ");
+    fragment.append(wrapper);
+  });
+  container.replaceChildren(fragment);
+}
+
+function renderChineseStory(container, sentences) {
+  const fragment = document.createDocumentFragment();
+  sentences.forEach((sentence, index) => {
+    const wrapper = document.createElement("span");
+    wrapper.className = "story-sentence";
+    wrapper.append(createStoryWordButton(sentence.word, sentence.audioId));
+    wrapper.append(`：${sentence.chinese}`);
+    if (index < sentences.length - 1) wrapper.append(" ");
+    fragment.append(wrapper);
+  });
+  container.replaceChildren(fragment);
+}
+
+function renderDailyStory() {
+  const story = createDailyStory(dailyWords, today);
+  elements.dailyStoryTitle.textContent = story.title;
+  renderEnglishStory(elements.dailyStoryEnglish, story.sentences);
+  renderChineseStory(elements.dailyStoryChinese, story.sentences);
+  elements.storySpeak.dataset.speakText = STORY_SPEAK_KEY;
+  elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
+  return story;
+}
+
 function wordCard(item, index) {
   const article = document.createElement("article");
   article.className = "word-card";
+  article.id = `word-${item.audioId}`;
+  article.tabIndex = -1;
   article.innerHTML = `
     <div class="word-card-top">
       <div>
@@ -216,6 +342,7 @@ function renderToday() {
     new Date(`${today}T12:00:00`)
   );
   elements.todayDate.textContent = date;
+  renderDailyStory();
   elements.wordList.replaceChildren(...dailyWords.map(wordCard));
   elements.todayCompleteCard.hidden = !completed;
   elements.completeToday.hidden = completed;
@@ -337,9 +464,11 @@ elements.completeToday.addEventListener("click", () => {
 
 voiceButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    stopActivePlayback();
     state.voiceGender = button.dataset.voiceGender;
     saveState();
     renderVoiceControl();
+    elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
     showToast(`已切換為 ${AUDIO_VOICES[state.voiceGender].label}`);
   });
 });
@@ -347,6 +476,31 @@ voiceButtons.forEach((button) => {
 elements.wordList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-speak-text]");
   if (button) speakText(button.dataset.speakText, button.dataset.audioId, button.dataset.audioKind);
+});
+elements.storySpeak.addEventListener("click", () => {
+  const story = createDailyStory(dailyWords, today);
+  playStoryAudio(story.sentences);
+});
+elements.storyTranslationToggle.addEventListener("click", () => {
+  const willOpen = elements.dailyStoryTranslation.hidden;
+  elements.dailyStoryTranslation.hidden = !willOpen;
+  elements.storyTranslationToggle.setAttribute("aria-expanded", String(willOpen));
+  elements.storyTranslationToggle.querySelector("span").textContent = willOpen ? "隱藏中文翻譯" : "顯示中文翻譯";
+});
+document.querySelector(".story-card").addEventListener("click", (event) => {
+  const link = event.target.closest("[data-word-target]");
+  if (!link) return;
+  const target = document.getElementById(`word-${link.dataset.wordTarget}`);
+  if (!target) return;
+  target.scrollIntoView({
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center"
+  });
+  target.focus({ preventScroll: true });
+  document.querySelectorAll(".word-card.is-story-target").forEach((card) => card.classList.remove("is-story-target"));
+  target.classList.add("is-story-target");
+  clearTimeout(storyHighlightTimeout);
+  storyHighlightTimeout = setTimeout(() => target.classList.remove("is-story-target"), 1800);
 });
 elements.reviewSpeak.addEventListener("click", () => {
   speakText(elements.reviewSpeak.dataset.speakText, elements.reviewSpeak.dataset.audioId, elements.reviewSpeak.dataset.audioKind);
