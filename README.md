@@ -59,6 +59,8 @@
 
 語音使用 Apache 2.0 授權的 [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 預先產生，不需要在手機中放 API 金鑰。音檔第一次播放需要網路，成功播放後 service worker 會保存該音檔，之後可離線重播；如果自然語音檔暫時無法取得，APP 才會改用裝置內建的美式英文語音，而且不會再用變更音高的方式模擬性別。
 
+APP 的 HTML、CSS 與 JavaScript 在有網路時會優先取得最新版，離線時才讀取快取；已播放過的 MP3 則優先讀取本機快取。這能兼顧 PWA 離線使用與版本更新速度。
+
 專案的 GitHub Actions 頁面中可手動執行 `Generate Bella and Michael audio`，它會產生 300 個單字及 600 句例句的兩組聲音，共 1,800 個 MP3。另一個 `Generate complete story audio` 工作會為 30 篇完整故事各產生 Bella 與 Michael 版本，共 60 個 MP3。所有音檔都會自動提交到 `audio/`；第一次播放需要網路，成功播放後可由 service worker 保存供離線重播。
 
 ## 在電腦上預覽與測試（選用）

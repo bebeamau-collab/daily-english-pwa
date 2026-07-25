@@ -1,4 +1,4 @@
-const CACHE_NAME = "daily-english-v8";
+const CACHE_NAME = "daily-english-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -31,18 +31,34 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  const isAudio = isSameOrigin && url.pathname.endsWith(".mp3");
+
+  if (isAudio) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      }))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok && new URL(event.request.url).origin === self.location.origin) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached || caches.match("./index.html"));
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok && isSameOrigin) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((cached) => (
+        cached || (event.request.mode === "navigate" ? caches.match("./index.html") : undefined)
+      )))
   );
 });
