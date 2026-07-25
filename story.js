@@ -33,6 +33,61 @@ export function getStoryAudioText(story) {
   return `${story.title}. ${story.englishParagraphs.join(" ")}`;
 }
 
+export function splitStorySentences(paragraphs) {
+  return paragraphs.flatMap((paragraph, paragraphIndex) => {
+    const matches = paragraph.match(/[^.!?]+(?:[.!?]+["'’”]?)?(?=\s|$)/g) || [paragraph];
+    return matches
+      .map((text) => text.trim())
+      .filter(Boolean)
+      .map((text) => ({ text, paragraphIndex }));
+  });
+}
+
+function readingWeight(text, pauseWeight = 1.8) {
+  const words = text.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/g) || [];
+  return Math.max(1, words.length) + pauseWeight;
+}
+
+export function createStoryTimeline(story) {
+  const titleWeight = readingWeight(story.title, 2.6);
+  const sentences = splitStorySentences(story.englishParagraphs).map((sentence) => ({
+    ...sentence,
+    weight: readingWeight(sentence.text)
+  }));
+  return {
+    titleWeight,
+    sentences,
+    totalWeight: titleWeight + sentences.reduce((sum, sentence) => sum + sentence.weight, 0)
+  };
+}
+
+export function getStoryReadingPosition(timeline, progress) {
+  const safeProgress = Math.min(1, Math.max(0, Number(progress) || 0));
+  let cursor = safeProgress * timeline.totalWeight;
+  if (cursor < timeline.titleWeight) {
+    return {
+      sentenceIndex: -1,
+      sentenceProgress: cursor / timeline.titleWeight,
+      progress: safeProgress
+    };
+  }
+
+  cursor -= timeline.titleWeight;
+  for (let index = 0; index < timeline.sentences.length; index += 1) {
+    const sentence = timeline.sentences[index];
+    if (cursor < sentence.weight || index === timeline.sentences.length - 1) {
+      return {
+        sentenceIndex: index,
+        sentenceProgress: Math.min(1, cursor / sentence.weight),
+        progress: safeProgress
+      };
+    }
+    cursor -= sentence.weight;
+  }
+
+  return { sentenceIndex: -1, sentenceProgress: 0, progress: safeProgress };
+}
+
 export function validateStories(words) {
   return STORIES.map((story, index) => {
     const dailyWords = words.slice(index * WORDS_PER_DAY, index * WORDS_PER_DAY + WORDS_PER_DAY);

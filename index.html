@@ -72,6 +72,26 @@
               </button>
             </div>
             <p class="story-hint">閱讀完整情節；點擊有底線的英文，可快速前往該單字。</p>
+            <div id="story-reader-tracker" class="story-reader-tracker">
+              <div class="story-reader-meta">
+                <span class="story-reader-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
+                </span>
+                <span id="story-reader-status" role="status" aria-live="polite">跟讀模式・播放後逐句標示</span>
+                <span id="story-reader-count" class="story-reader-count" aria-hidden="true"></span>
+              </div>
+              <div
+                id="story-reader-progress"
+                class="story-reader-progress"
+                role="progressbar"
+                aria-label="文章朗讀進度"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span id="story-reader-progress-fill"></span>
+              </div>
+            </div>
             <div id="daily-story-english" class="story-text" lang="en-US"></div>
             <button
               id="story-translation-toggle"

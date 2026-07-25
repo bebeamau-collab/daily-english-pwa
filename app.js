@@ -11,7 +11,13 @@ import {
   normalizeState
 } from "./core.js";
 import { AUDIO_VOICES, getAudioPath, getStoryAudioPath, pickAmericanVoice, voicePitch } from "./speech.js";
-import { createDailyStory, getStoryAudioText } from "./story.js";
+import {
+  createDailyStory,
+  createStoryTimeline,
+  getStoryAudioText,
+  getStoryReadingPosition,
+  splitStorySentences
+} from "./story.js";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -24,6 +30,9 @@ let speakingText = "";
 let activeAudio = null;
 let audioSequenceToken = 0;
 let storyHighlightTimeout = null;
+let storyReaderCompletionTimeout = null;
+let storyTimeline = null;
+let activeStorySentence = null;
 
 const STORY_SPEAK_KEY = "__daily-story__";
 
@@ -87,6 +96,84 @@ function updateSpeakButtons() {
   });
 }
 
+function setStoryReaderProgress(progress) {
+  const safeProgress = Math.min(1, Math.max(0, Number(progress) || 0));
+  elements.storyReaderProgressFill.style.transform = `scaleX(${safeProgress})`;
+  elements.storyReaderProgress.setAttribute("aria-valuenow", String(Math.round(safeProgress * 100)));
+}
+
+function clearStorySentenceMarker() {
+  elements.dailyStoryTitle.classList.remove("is-reading-title");
+  document.querySelectorAll(".story-sentence.is-reading").forEach((sentence) => {
+    sentence.classList.remove("is-reading");
+    sentence.removeAttribute("aria-current");
+  });
+  activeStorySentence = null;
+}
+
+function keepReadingSentenceVisible(sentence) {
+  if (!sentence) return;
+  const rect = sentence.getBoundingClientRect();
+  const topGuard = 72;
+  const bottomGuard = window.innerHeight - 112;
+  if (rect.top < topGuard || rect.bottom > bottomGuard) {
+    sentence.scrollIntoView({
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center"
+    });
+  }
+}
+
+function updateStoryReader(progress, followText = true) {
+  if (!storyTimeline) return;
+  const position = getStoryReadingPosition(storyTimeline, progress);
+  const sentenceChanged = position.sentenceIndex !== activeStorySentence;
+
+  elements.storyReaderTracker.classList.add("is-active");
+  elements.storyReaderTracker.classList.remove("is-complete");
+  setStoryReaderProgress(position.progress);
+
+  if (!sentenceChanged) return;
+  clearStorySentenceMarker();
+  activeStorySentence = position.sentenceIndex;
+
+  if (position.sentenceIndex === -1) {
+    elements.dailyStoryTitle.classList.add("is-reading-title");
+    elements.storyReaderStatus.textContent = "正在朗讀標題";
+    elements.storyReaderCount.textContent = "準備進入文章";
+    return;
+  }
+
+  const sentence = elements.dailyStoryEnglish.querySelector(
+    `[data-story-sentence="${position.sentenceIndex}"]`
+  );
+  if (!sentence) return;
+  sentence.classList.add("is-reading");
+  sentence.setAttribute("aria-current", "true");
+  elements.storyReaderStatus.textContent = "跟讀中";
+  elements.storyReaderCount.textContent = `${position.sentenceIndex + 1} / ${storyTimeline.sentences.length} 句`;
+  if (followText) keepReadingSentenceVisible(sentence);
+}
+
+function resetStoryReader() {
+  clearTimeout(storyReaderCompletionTimeout);
+  clearStorySentenceMarker();
+  elements.storyReaderTracker.classList.remove("is-active", "is-complete");
+  elements.storyReaderStatus.textContent = "跟讀模式・播放後逐句標示";
+  elements.storyReaderCount.textContent = "";
+  setStoryReaderProgress(0);
+}
+
+function completeStoryReader() {
+  clearStorySentenceMarker();
+  elements.storyReaderTracker.classList.add("is-active", "is-complete");
+  elements.storyReaderStatus.textContent = "朗讀完成";
+  elements.storyReaderCount.textContent = `共 ${storyTimeline?.sentences.length || 0} 句`;
+  setStoryReaderProgress(1);
+  clearTimeout(storyReaderCompletionTimeout);
+  storyReaderCompletionTimeout = setTimeout(resetStoryReader, 2600);
+}
+
 function finishSpeaking() {
   speakingText = "";
   updateSpeakButtons();
@@ -100,11 +187,13 @@ function stopActivePlayback() {
   }
   if ("speechSynthesis" in window) speechSynthesis.cancel();
   finishSpeaking();
+  resetStoryReader();
 }
 
-function speakWithDeviceVoice(text, speakKey = text) {
+function speakWithDeviceVoice(text, speakKey = text, trackStory = false) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
     showToast("這個瀏覽器不支援語音播放");
+    if (trackStory) resetStoryReader();
     return;
   }
 
@@ -118,9 +207,21 @@ function speakWithDeviceVoice(text, speakKey = text) {
   utterance.onstart = () => {
     speakingText = speakKey;
     updateSpeakButtons();
+    if (trackStory) updateStoryReader(0);
   };
-  utterance.onend = finishSpeaking;
-  utterance.onerror = finishSpeaking;
+  utterance.onboundary = (event) => {
+    if (trackStory && Number.isFinite(event.charIndex)) {
+      updateStoryReader(event.charIndex / text.length);
+    }
+  };
+  utterance.onend = () => {
+    finishSpeaking();
+    if (trackStory) completeStoryReader();
+  };
+  utterance.onerror = () => {
+    finishSpeaking();
+    if (trackStory) resetStoryReader();
+  };
   speechSynthesis.speak(utterance);
 }
 
@@ -172,10 +273,17 @@ function playStoryAudio(story) {
   audio.onplay = () => {
     speakingText = STORY_SPEAK_KEY;
     updateSpeakButtons();
+    updateStoryReader(audio.duration ? audio.currentTime / audio.duration : 0);
+  };
+  audio.ontimeupdate = () => {
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      updateStoryReader(audio.currentTime / audio.duration);
+    }
   };
   audio.onended = () => {
     activeAudio = null;
     finishSpeaking();
+    completeStoryReader();
   };
   let fallbackStarted = false;
   const useFallbackVoice = () => {
@@ -184,7 +292,7 @@ function playStoryAudio(story) {
     activeAudio = null;
     finishSpeaking();
     showToast("完整故事音檔尚未準備好，暫用裝置語音");
-    speakWithDeviceVoice(text, STORY_SPEAK_KEY);
+    speakWithDeviceVoice(text, STORY_SPEAK_KEY, true);
   };
   audio.onerror = useFallbackVoice;
   audio.play().catch(useFallbackVoice);
@@ -207,23 +315,41 @@ function keywordPattern(words) {
   return new RegExp(`\\b(${alternatives.join("|")})\\b`, "gi");
 }
 
-function renderStoryParagraphs(container, paragraphs, words) {
+function appendStoryText(container, text, words, byWord) {
+  let lastIndex = 0;
+  for (const match of text.matchAll(keywordPattern(words))) {
+    container.append(text.slice(lastIndex, match.index));
+    const item = byWord.get(match[0].toLocaleLowerCase("en-US"));
+    if (item) {
+      container.append(createStoryWordButton(item.word, item.audioId, match[0]));
+    } else {
+      container.append(match[0]);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  container.append(text.slice(lastIndex));
+}
+
+function renderStoryParagraphs(container, paragraphs, words, trackReading = false) {
   const fragment = document.createDocumentFragment();
   const byWord = new Map(words.map((item) => [item.word.toLocaleLowerCase("en-US"), item]));
+  let sentenceIndex = 0;
   paragraphs.forEach((text) => {
     const paragraph = document.createElement("p");
-    let lastIndex = 0;
-    for (const match of text.matchAll(keywordPattern(words))) {
-      paragraph.append(text.slice(lastIndex, match.index));
-      const item = byWord.get(match[0].toLocaleLowerCase("en-US"));
-      if (item) {
-        paragraph.append(createStoryWordButton(item.word, item.audioId, match[0]));
-      } else {
-        paragraph.append(match[0]);
-      }
-      lastIndex = match.index + match[0].length;
+    if (trackReading) {
+      const sentences = splitStorySentences([text]);
+      sentences.forEach((sentence, localIndex) => {
+        const sentenceElement = document.createElement("span");
+        sentenceElement.className = "story-sentence";
+        sentenceElement.dataset.storySentence = String(sentenceIndex);
+        appendStoryText(sentenceElement, sentence.text, words, byWord);
+        paragraph.append(sentenceElement);
+        if (localIndex < sentences.length - 1) paragraph.append(" ");
+        sentenceIndex += 1;
+      });
+    } else {
+      appendStoryText(paragraph, text, words, byWord);
     }
-    paragraph.append(text.slice(lastIndex));
     fragment.append(paragraph);
   });
   container.replaceChildren(fragment);
@@ -231,10 +357,12 @@ function renderStoryParagraphs(container, paragraphs, words) {
 
 function renderDailyStory() {
   const story = createDailyStory(dailyWords, today);
+  storyTimeline = createStoryTimeline(story);
   elements.dailyStoryTitle.textContent = story.title;
   elements.storyWordCount.textContent = `約 ${story.wordCount} 個英文字`;
-  renderStoryParagraphs(elements.dailyStoryEnglish, story.englishParagraphs, dailyWords);
+  renderStoryParagraphs(elements.dailyStoryEnglish, story.englishParagraphs, dailyWords, true);
   renderStoryParagraphs(elements.dailyStoryChinese, story.chineseParagraphs, dailyWords);
+  resetStoryReader();
   elements.storySpeak.dataset.speakText = STORY_SPEAK_KEY;
   elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
   return story;

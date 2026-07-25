@@ -18,7 +18,14 @@ import { WORDS } from "../words.js";
 import { PHONETICS } from "../phonetics.js";
 import { SECOND_EXAMPLES } from "../second-examples.js";
 import { AUDIO_VOICES, getAudioPath, getStoryAudioPath, pickAmericanVoice, voicePitch } from "../speech.js";
-import { STORIES, createDailyStory, validateStories } from "../story.js";
+import {
+  STORIES,
+  createDailyStory,
+  createStoryTimeline,
+  getStoryReadingPosition,
+  splitStorySentences,
+  validateStories
+} from "../story.js";
 
 test("字庫完整且每日洗牌在一輪內不重複", () => {
   assert.ok(WORDS.length >= 300);
@@ -141,4 +148,20 @@ test("30 篇每日故事有連貫段落並在中英文保留全部單字", () =>
     assert.ok(rendered.chineseParagraphs.length >= 3);
     assert.ok(rendered.wordCount >= 100 && rendered.wordCount <= 260);
   });
+});
+
+test("故事跟讀時間軸會從標題依序前進到最後一句", () => {
+  const story = STORIES[25];
+  const sentences = splitStorySentences(story.englishParagraphs);
+  const timeline = createStoryTimeline(story);
+  assert.ok(sentences.length > story.englishParagraphs.length);
+  assert.equal(timeline.sentences.length, sentences.length);
+  assert.ok(timeline.totalWeight > timeline.titleWeight);
+  assert.equal(getStoryReadingPosition(timeline, 0).sentenceIndex, -1);
+
+  const firstSentenceProgress = (timeline.titleWeight + 0.01) / timeline.totalWeight;
+  assert.equal(getStoryReadingPosition(timeline, firstSentenceProgress).sentenceIndex, 0);
+  assert.equal(getStoryReadingPosition(timeline, 1).sentenceIndex, timeline.sentences.length - 1);
+  assert.equal(getStoryReadingPosition(timeline, -1).progress, 0);
+  assert.equal(getStoryReadingPosition(timeline, 2).progress, 1);
 });
