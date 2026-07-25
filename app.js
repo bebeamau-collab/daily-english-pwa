@@ -268,26 +268,30 @@ function playStoryAudio(story) {
   stopActivePlayback();
   const text = getStoryAudioText(story);
   const audio = new Audio(getStoryAudioPath(story.id, state.voiceGender));
+  const playbackToken = audioSequenceToken;
+  const isCurrentPlayback = () => playbackToken === audioSequenceToken && activeAudio === audio;
   activeAudio = audio;
   audio.preload = "auto";
   audio.onplay = () => {
+    if (!isCurrentPlayback()) return;
     speakingText = STORY_SPEAK_KEY;
     updateSpeakButtons();
     updateStoryReader(audio.duration ? audio.currentTime / audio.duration : 0);
   };
   audio.ontimeupdate = () => {
-    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    if (isCurrentPlayback() && Number.isFinite(audio.duration) && audio.duration > 0) {
       updateStoryReader(audio.currentTime / audio.duration);
     }
   };
   audio.onended = () => {
+    if (!isCurrentPlayback()) return;
     activeAudio = null;
     finishSpeaking();
     completeStoryReader();
   };
   let fallbackStarted = false;
   const useFallbackVoice = () => {
-    if (fallbackStarted) return;
+    if (fallbackStarted || !isCurrentPlayback()) return;
     fallbackStarted = true;
     activeAudio = null;
     finishSpeaking();

@@ -65,7 +65,7 @@
 - 同來源 MP3 第一次成功播放後會由 service worker 的 GET 快取流程保存，供之後離線重播。
 - 文章朗讀改為播放整篇故事的單一 MP3，語氣與段落比逐句拼接自然。
 - 跟讀模式會同步顯示朗讀句數、進度列與當前句標記，並在必要時讓文章跟著語音適度移動。
-- `story.js` 與 `stories-data.js` 已加入 service worker 的離線快取清單，快取版本更新為 `daily-english-v7`。
+- `story.js` 與 `stories-data.js` 已加入 service worker 的離線快取清單，快取版本更新為 `daily-english-v8`。
 
 > 正常情況會播放固定的 Bella／Michael Kokoro 美式聲音；只有自然語音檔載入失敗時才會使用裝置內建語音。
 
