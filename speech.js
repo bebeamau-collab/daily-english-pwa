@@ -14,6 +14,20 @@ export const AUDIO_VOICES = {
   male: { id: "michael", label: "Michael 男聲" }
 };
 
+// 播放時統一微調，不必重新產生全部 MP3。
+export const AUDIO_PLAYBACK_RATE = 0.92;
+export const AUDIO_GAIN = 1.35;
+export const DEVICE_SPEECH_RATE = 0.82;
+
+export function configureAudioElement(audio) {
+  audio.defaultPlaybackRate = AUDIO_PLAYBACK_RATE;
+  audio.playbackRate = AUDIO_PLAYBACK_RATE;
+  audio.volume = 1;
+  audio.preservesPitch = true;
+  if ("webkitPreservesPitch" in audio) audio.webkitPreservesPitch = true;
+  return audio;
+}
+
 function normalize(value) {
   return String(value || "").trim().toLowerCase();
 }

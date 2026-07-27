@@ -10,7 +10,16 @@ import {
   getDueWords,
   normalizeState
 } from "./core.js";
-import { AUDIO_VOICES, getAudioPath, getStoryAudioPath, pickAmericanVoice, voicePitch } from "./speech.js";
+import {
+  AUDIO_GAIN,
+  AUDIO_VOICES,
+  DEVICE_SPEECH_RATE,
+  configureAudioElement,
+  getAudioPath,
+  getStoryAudioPath,
+  pickAmericanVoice,
+  voicePitch
+} from "./speech.js";
 import {
   createDailyStory,
   createStoryTimeline,
@@ -29,6 +38,8 @@ let availableVoices = [];
 let speakingText = "";
 let activeAudio = null;
 let audioSequenceToken = 0;
+let sharedAudioContext = null;
+const enhancedAudio = new WeakMap();
 let storyHighlightTimeout = null;
 let storyReaderCompletionTimeout = null;
 let storyTimeline = null;
@@ -179,6 +190,35 @@ function finishSpeaking() {
   updateSpeakButtons();
 }
 
+function prepareNaturalAudio(audio) {
+  configureAudioElement(audio);
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return audio;
+
+  try {
+    if (!sharedAudioContext) sharedAudioContext = new AudioContextClass();
+    if (sharedAudioContext.state === "suspended") {
+      sharedAudioContext.resume().catch(() => {});
+    }
+
+    const source = sharedAudioContext.createMediaElementSource(audio);
+    const gain = sharedAudioContext.createGain();
+    const compressor = sharedAudioContext.createDynamicsCompressor();
+    gain.gain.value = AUDIO_GAIN;
+    compressor.threshold.value = -12;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 0.005;
+    compressor.release.value = 0.2;
+    source.connect(gain).connect(compressor).connect(sharedAudioContext.destination);
+    enhancedAudio.set(audio, { source, gain, compressor });
+  } catch {
+    // Web Audio 不可用時，仍以原生音量與較慢速度播放。
+  }
+
+  return audio;
+}
+
 function stopActivePlayback() {
   audioSequenceToken += 1;
   if (activeAudio) {
@@ -201,7 +241,8 @@ function speakWithDeviceVoice(text, speakKey = text, trackStory = false) {
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = pickAmericanVoice(availableVoices, state.voiceGender);
   utterance.lang = "en-US";
-  utterance.rate = 0.86;
+  utterance.rate = DEVICE_SPEECH_RATE;
+  utterance.volume = 1;
   utterance.pitch = voicePitch(state.voiceGender);
   if (voice) utterance.voice = voice;
   utterance.onstart = () => {
@@ -234,7 +275,7 @@ function speakText(text, audioId, kind) {
     return;
   }
 
-  const audio = new Audio(path);
+  const audio = prepareNaturalAudio(new Audio(path));
   activeAudio = audio;
   audio.preload = "auto";
   audio.onplay = () => {
@@ -267,7 +308,7 @@ function playStoryAudio(story) {
 
   stopActivePlayback();
   const text = getStoryAudioText(story);
-  const audio = new Audio(getStoryAudioPath(story.id, state.voiceGender));
+  const audio = prepareNaturalAudio(new Audio(getStoryAudioPath(story.id, state.voiceGender)));
   const playbackToken = audioSequenceToken;
   const isCurrentPlayback = () => playbackToken === audioSequenceToken && activeAudio === audio;
   activeAudio = audio;
