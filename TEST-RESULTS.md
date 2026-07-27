@@ -61,8 +61,8 @@
 - GitHub Pages 最終發布工作成功；Bella 與 Michael 的正式 MP3 網址均可載入，不再回傳 404。
 - 在正式 APP 內分別播放 `meal` 的 Bella 與 Michael 音檔，兩次播放按鈕的 `aria-pressed` 都正確變為 `true`。
 - 在正式 APP 內分別播放〈The Last Ticket〉的 Bella 與 Michael 完整音檔，兩次播放按鈕的 `aria-pressed` 均正確變為 `true`，且未退回裝置語音。
-- Bella／Michael 的單字、兩組例句與完整故事統一使用原音高的 0.92 倍速，並加入 1.35 倍基礎增益及動態峰值保護。
-- 備用裝置語音速度設為較慢的 0.82 倍、音量設為最大可用值，語系固定為 `en-US`，不再變更音高模擬性別。
+- Bella／Michael 的單字、兩組例句與完整故事恢復原始 1.0 倍速與原音高，避免時間伸縮造成破音；1.35 倍基礎增益及動態峰值保護繼續保留。
+- 備用裝置語音速度恢復原本的 0.86 倍、音量設為最大可用值，語系固定為 `en-US`，不再變更音高模擬性別。
 - 2026-07-27 於正式 Pages 的 375×812 手機尺寸實測：Michael 完整文章、Bella 單字、例句與完整文章均正常播放，播放狀態皆正確變為 `true`。
 - Michael 與 Bella 文章的跟讀進度都能由 0 前進至 2%，播放期間主控台皆為 0 個警告、0 個錯誤。
 - `speech.js`、`phonetics.js`、`second-examples.js` 已加入 service worker 的離線快取清單。
@@ -71,7 +71,7 @@
 - 跟讀模式會同步顯示朗讀句數、進度列與當前句標記，並在必要時讓文章跟著語音適度移動。
 - APP 基本程式改為線上優先、離線快取備援；MP3 保持快取優先，避免已安裝 PWA 長時間停留在舊版。
 - 關閉本機伺服器後重新整理，故事、18 個跟讀句段與介面仍可從快取完整載入，主控台 0 個錯誤。
-- `story.js` 與 `stories-data.js` 已加入 service worker 的離線快取清單，本次音量與語速微調將快取版本更新為 `daily-english-v10`。
+- `story.js` 與 `stories-data.js` 已加入 service worker 的離線快取清單，本次恢復原速率將快取版本更新為 `daily-english-v11`。
 
 > 正常情況會播放固定的 Bella／Michael Kokoro 美式聲音；只有自然語音檔載入失敗時才會使用裝置內建語音。
 

@@ -15,9 +15,9 @@ export const AUDIO_VOICES = {
 };
 
 // 播放時統一微調，不必重新產生全部 MP3。
-export const AUDIO_PLAYBACK_RATE = 0.92;
+export const AUDIO_PLAYBACK_RATE = 1;
 export const AUDIO_GAIN = 1.35;
-export const DEVICE_SPEECH_RATE = 0.82;
+export const DEVICE_SPEECH_RATE = 0.86;
 
 export function configureAudioElement(audio) {
   audio.defaultPlaybackRate = AUDIO_PLAYBACK_RATE;
