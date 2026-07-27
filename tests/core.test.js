@@ -132,7 +132,7 @@ test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", ()
   assert.equal(AUDIO_VOICES.female.id, "bella");
   assert.equal(AUDIO_VOICES.male.id, "michael");
   assert.equal(AUDIO_PLAYBACK_RATE, 1);
-  assert.equal(AUDIO_GAIN, 1.35);
+  assert.equal(AUDIO_GAIN, 1.55);
   assert.equal(DEVICE_SPEECH_RATE, 0.86);
   const fakeAudio = { webkitPreservesPitch: false };
   assert.equal(configureAudioElement(fakeAudio), fakeAudio);
