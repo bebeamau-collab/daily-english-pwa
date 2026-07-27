@@ -17,7 +17,17 @@ import {
 import { WORDS } from "../words.js";
 import { PHONETICS } from "../phonetics.js";
 import { SECOND_EXAMPLES } from "../second-examples.js";
-import { AUDIO_VOICES, getAudioPath, getStoryAudioPath, pickAmericanVoice, voicePitch } from "../speech.js";
+import {
+  AUDIO_GAIN,
+  AUDIO_PLAYBACK_RATE,
+  AUDIO_VOICES,
+  DEVICE_SPEECH_RATE,
+  configureAudioElement,
+  getAudioPath,
+  getStoryAudioPath,
+  pickAmericanVoice,
+  voicePitch
+} from "../speech.js";
 import {
   STORIES,
   createDailyStory,
@@ -121,6 +131,16 @@ test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", ()
   assert.equal(pickAmericanVoice([{ name: "US Voice", lang: "en-US", default: true }], "male").name, "US Voice");
   assert.equal(AUDIO_VOICES.female.id, "bella");
   assert.equal(AUDIO_VOICES.male.id, "michael");
+  assert.equal(AUDIO_PLAYBACK_RATE, 0.92);
+  assert.equal(AUDIO_GAIN, 1.35);
+  assert.equal(DEVICE_SPEECH_RATE, 0.82);
+  const fakeAudio = { webkitPreservesPitch: false };
+  assert.equal(configureAudioElement(fakeAudio), fakeAudio);
+  assert.equal(fakeAudio.defaultPlaybackRate, 0.92);
+  assert.equal(fakeAudio.playbackRate, 0.92);
+  assert.equal(fakeAudio.volume, 1);
+  assert.equal(fakeAudio.preservesPitch, true);
+  assert.equal(fakeAudio.webkitPreservesPitch, true);
   assert.equal(voicePitch("male"), 1);
   assert.equal(voicePitch("female"), 1);
   assert.equal(getAudioPath("006", "word", "female"), "./audio/bella/006-word.mp3");
