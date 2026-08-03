@@ -33,6 +33,7 @@ const elements = Object.fromEntries(
 );
 const navButtons = [...document.querySelectorAll(".nav-button")];
 const voiceButtons = [...document.querySelectorAll("[data-voice-gender]")];
+const themeButtons = [...document.querySelectorAll("[data-theme-value]")];
 const views = ["today", "review", "progress"];
 let availableVoices = [];
 let speakingText = "";
@@ -94,6 +95,16 @@ function refreshVoices() {
 function renderVoiceControl() {
   voiceButtons.forEach((button) => {
     const active = button.dataset.voiceGender === state.voiceGender;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function renderThemeControl() {
+  document.documentElement.dataset.theme = state.theme;
+  document.querySelector('meta[name="theme-color"]').content = state.theme === "dark" ? "#312e81" : "#4f46e5";
+  themeButtons.forEach((button) => {
+    const active = button.dataset.themeValue === state.theme;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
@@ -570,6 +581,7 @@ function renderProgress() {
 }
 
 function renderAll() {
+  renderThemeControl();
   renderVoiceControl();
   renderToday();
   renderReview();
@@ -613,6 +625,15 @@ voiceButtons.forEach((button) => {
     renderVoiceControl();
     elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
     showToast(`已切換為 ${AUDIO_VOICES[state.voiceGender].label}`);
+  });
+});
+
+themeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.theme = button.dataset.themeValue === "dark" ? "dark" : "light";
+    saveState();
+    renderThemeControl();
+    showToast(`已切換為${state.theme === "dark" ? "深色" : "淺色"}閱讀模式`);
   });
 });
 

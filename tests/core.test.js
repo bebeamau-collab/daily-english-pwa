@@ -114,7 +114,10 @@ test("localStorage JSON 往返可持久化，streak 中斷歸零", () => {
   const state = completeToday(createInitialState(), WORDS.slice(0, 10), "2026-07-23");
   const restored = normalizeState(JSON.parse(JSON.stringify(state)));
   assert.deepEqual(restored, state);
+  assert.equal(restored.theme, "light");
   assert.equal(restored.voiceGender, "female");
+  assert.equal(normalizeState({ ...state, theme: "dark" }).theme, "dark");
+  assert.equal(normalizeState({ ...state, theme: "system" }).theme, "light");
   assert.equal(calculateStreak(["2026-07-20", "2026-07-21", "2026-07-22"], "2026-07-23"), 3);
   assert.equal(calculateStreak(["2026-07-20"], "2026-07-23"), 0);
   assert.equal(calculateStreak(["2026-07-21", "2026-07-22", "2026-07-23"], "2026-07-23"), 3);

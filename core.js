@@ -56,7 +56,7 @@ export function getDailyWords(words, dateString) {
 }
 
 export function createInitialState() {
-  return { version: 1, voiceGender: "female", completedDates: [], learned: {}, reviews: {} };
+  return { version: 1, theme: "light", voiceGender: "female", completedDates: [], learned: {}, reviews: {} };
 }
 
 export function normalizeState(value) {
@@ -64,6 +64,7 @@ export function normalizeState(value) {
   if (!value || typeof value !== "object") return fallback;
   return {
     version: 1,
+    theme: value.theme === "dark" ? "dark" : "light",
     voiceGender: value.voiceGender === "male" ? "male" : "female",
     completedDates: Array.isArray(value.completedDates) ? [...new Set(value.completedDates)].sort() : [],
     learned: value.learned && typeof value.learned === "object" ? value.learned : {},
