@@ -1,5 +1,5 @@
-import { RAW_STORIES } from "./stories-data.js";
-import { WORDS_PER_DAY, dayNumber } from "./core.js";
+import { RAW_STORIES } from "./stories-data.js?v=15";
+import { WORDS_PER_DAY, dayNumber } from "./core.js?v=15";
 
 function parseStories(raw) {
   return [...raw.matchAll(
@@ -57,6 +57,7 @@ export function createStoryTimeline(story) {
   return {
     titleWeight,
     sentences,
+    paragraphCount: story.englishParagraphs.length,
     totalWeight: titleWeight + sentences.reduce((sum, sentence) => sum + sentence.weight, 0)
   };
 }
@@ -67,6 +68,7 @@ export function getStoryReadingPosition(timeline, progress) {
   if (cursor < timeline.titleWeight) {
     return {
       sentenceIndex: -1,
+      paragraphIndex: -1,
       sentenceProgress: cursor / timeline.titleWeight,
       progress: safeProgress
     };
@@ -78,6 +80,7 @@ export function getStoryReadingPosition(timeline, progress) {
     if (cursor < sentence.weight || index === timeline.sentences.length - 1) {
       return {
         sentenceIndex: index,
+        paragraphIndex: sentence.paragraphIndex,
         sentenceProgress: Math.min(1, cursor / sentence.weight),
         progress: safeProgress
       };
@@ -85,7 +88,7 @@ export function getStoryReadingPosition(timeline, progress) {
     cursor -= sentence.weight;
   }
 
-  return { sentenceIndex: -1, sentenceProgress: 0, progress: safeProgress };
+  return { sentenceIndex: -1, paragraphIndex: -1, sentenceProgress: 0, progress: safeProgress };
 }
 
 export function validateStories(words) {

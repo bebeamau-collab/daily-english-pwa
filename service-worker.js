@@ -1,16 +1,16 @@
-const CACHE_NAME = "daily-english-v13";
+const CACHE_NAME = "daily-english-v15";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js",
-  "./core.js",
-  "./speech.js",
-  "./story.js",
-  "./stories-data.js",
-  "./words.js",
-  "./second-examples.js",
-  "./phonetics.js",
+  "./app.js?v=15",
+  "./core.js?v=15",
+  "./speech.js?v=15",
+  "./story.js?v=15",
+  "./stories-data.js?v=15",
+  "./words.js?v=15",
+  "./second-examples.js?v=15",
+  "./phonetics.js?v=15",
   "./manifest.webmanifest",
   "./icons/icon-180.png",
   "./icons/icon-512.png"

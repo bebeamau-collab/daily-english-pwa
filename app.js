@@ -1,4 +1,4 @@
-import { WORDS } from "./words.js";
+import { WORDS } from "./words.js?v=15";
 import {
   STORAGE_KEY,
   answerReview,
@@ -9,7 +9,7 @@ import {
   getDailyWords,
   getDueWords,
   normalizeState
-} from "./core.js";
+} from "./core.js?v=15";
 import {
   AUDIO_GAIN,
   AUDIO_VOICES,
@@ -19,14 +19,14 @@ import {
   getStoryAudioPath,
   pickAmericanVoice,
   voicePitch
-} from "./speech.js";
+} from "./speech.js?v=15";
 import {
   createDailyStory,
   createStoryTimeline,
   getStoryAudioText,
   getStoryReadingPosition,
   splitStorySentences
-} from "./story.js";
+} from "./story.js?v=15";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -44,7 +44,7 @@ const enhancedAudio = new WeakMap();
 let storyHighlightTimeout = null;
 let storyReaderCompletionTimeout = null;
 let storyTimeline = null;
-let activeStorySentence = null;
+let activeStoryParagraph = null;
 
 const STORY_SPEAK_KEY = "__daily-story__";
 
@@ -124,22 +124,22 @@ function setStoryReaderProgress(progress) {
   elements.storyReaderProgress.setAttribute("aria-valuenow", String(Math.round(safeProgress * 100)));
 }
 
-function clearStorySentenceMarker() {
+function clearStoryParagraphMarker() {
   elements.dailyStoryTitle.classList.remove("is-reading-title");
-  document.querySelectorAll(".story-sentence.is-reading").forEach((sentence) => {
-    sentence.classList.remove("is-reading");
-    sentence.removeAttribute("aria-current");
+  document.querySelectorAll(".story-paragraph.is-reading").forEach((paragraph) => {
+    paragraph.classList.remove("is-reading");
+    paragraph.removeAttribute("aria-current");
   });
-  activeStorySentence = null;
+  activeStoryParagraph = null;
 }
 
-function keepReadingSentenceVisible(sentence) {
-  if (!sentence) return;
-  const rect = sentence.getBoundingClientRect();
+function keepReadingParagraphVisible(paragraph) {
+  if (!paragraph) return;
+  const rect = paragraph.getBoundingClientRect();
   const topGuard = 72;
   const bottomGuard = window.innerHeight - 112;
   if (rect.top < topGuard || rect.bottom > bottomGuard) {
-    sentence.scrollIntoView({
+    paragraph.scrollIntoView({
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "center"
     });
@@ -149,15 +149,15 @@ function keepReadingSentenceVisible(sentence) {
 function updateStoryReader(progress, followText = true) {
   if (!storyTimeline) return;
   const position = getStoryReadingPosition(storyTimeline, progress);
-  const sentenceChanged = position.sentenceIndex !== activeStorySentence;
+  const paragraphChanged = position.paragraphIndex !== activeStoryParagraph;
 
   elements.storyReaderTracker.classList.add("is-active");
   elements.storyReaderTracker.classList.remove("is-complete");
   setStoryReaderProgress(position.progress);
 
-  if (!sentenceChanged) return;
-  clearStorySentenceMarker();
-  activeStorySentence = position.sentenceIndex;
+  if (!paragraphChanged) return;
+  clearStoryParagraphMarker();
+  activeStoryParagraph = position.paragraphIndex;
 
   if (position.sentenceIndex === -1) {
     elements.dailyStoryTitle.classList.add("is-reading-title");
@@ -166,31 +166,31 @@ function updateStoryReader(progress, followText = true) {
     return;
   }
 
-  const sentence = elements.dailyStoryEnglish.querySelector(
-    `[data-story-sentence="${position.sentenceIndex}"]`
+  const paragraph = elements.dailyStoryEnglish.querySelector(
+    `[data-story-paragraph="${position.paragraphIndex}"]`
   );
-  if (!sentence) return;
-  sentence.classList.add("is-reading");
-  sentence.setAttribute("aria-current", "true");
-  elements.storyReaderStatus.textContent = "跟讀中";
-  elements.storyReaderCount.textContent = `${position.sentenceIndex + 1} / ${storyTimeline.sentences.length} 句`;
-  if (followText) keepReadingSentenceVisible(sentence);
+  if (!paragraph) return;
+  paragraph.classList.add("is-reading");
+  paragraph.setAttribute("aria-current", "true");
+  elements.storyReaderStatus.textContent = "段落跟讀中";
+  elements.storyReaderCount.textContent = `${position.paragraphIndex + 1} / ${storyTimeline.paragraphCount} 段`;
+  if (followText) keepReadingParagraphVisible(paragraph);
 }
 
 function resetStoryReader() {
   clearTimeout(storyReaderCompletionTimeout);
-  clearStorySentenceMarker();
+  clearStoryParagraphMarker();
   elements.storyReaderTracker.classList.remove("is-active", "is-complete");
-  elements.storyReaderStatus.textContent = "跟讀模式・播放後逐句標示";
+  elements.storyReaderStatus.textContent = "逐段跟讀・播放後以括號標示";
   elements.storyReaderCount.textContent = "";
   setStoryReaderProgress(0);
 }
 
 function completeStoryReader() {
-  clearStorySentenceMarker();
+  clearStoryParagraphMarker();
   elements.storyReaderTracker.classList.add("is-active", "is-complete");
   elements.storyReaderStatus.textContent = "朗讀完成";
-  elements.storyReaderCount.textContent = `共 ${storyTimeline?.sentences.length || 0} 句`;
+  elements.storyReaderCount.textContent = `共 ${storyTimeline?.paragraphCount || 0} 段`;
   setStoryReaderProgress(1);
   clearTimeout(storyReaderCompletionTimeout);
   storyReaderCompletionTimeout = setTimeout(resetStoryReader, 2600);
@@ -390,9 +390,11 @@ function renderStoryParagraphs(container, paragraphs, words, trackReading = fals
   const fragment = document.createDocumentFragment();
   const byWord = new Map(words.map((item) => [item.word.toLocaleLowerCase("en-US"), item]));
   let sentenceIndex = 0;
-  paragraphs.forEach((text) => {
+  paragraphs.forEach((text, paragraphIndex) => {
     const paragraph = document.createElement("p");
     if (trackReading) {
+      paragraph.className = "story-paragraph";
+      paragraph.dataset.storyParagraph = String(paragraphIndex);
       const sentences = splitStorySentences([text]);
       sentences.forEach((sentence, localIndex) => {
         const sentenceElement = document.createElement("span");

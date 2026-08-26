@@ -89,13 +89,13 @@
                 <span>播放完整文章</span>
               </button>
             </div>
-            <p class="story-hint">閱讀完整情節；點擊有底線的英文，可快速前往該單字。</p>
+            <p class="story-hint">播放時會用跳色底與括號標示目前段落；點擊有底線的英文，可快速前往該單字。</p>
             <div id="story-reader-tracker" class="story-reader-tracker">
               <div class="story-reader-meta">
                 <span class="story-reader-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
                 </span>
-                <span id="story-reader-status" role="status" aria-live="polite">跟讀模式・播放後逐句標示</span>
+                <span id="story-reader-status" role="status" aria-live="polite">逐段跟讀・播放後以括號標示</span>
                 <span id="story-reader-count" class="story-reader-count" aria-hidden="true"></span>
               </div>
               <div
@@ -256,6 +256,6 @@
     </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=15"></script>
   </body>
 </html>
