@@ -134,13 +134,13 @@ test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", ()
   assert.equal(pickAmericanVoice([{ name: "US Voice", lang: "en-US", default: true }], "male").name, "US Voice");
   assert.equal(AUDIO_VOICES.female.id, "bella");
   assert.equal(AUDIO_VOICES.male.id, "michael");
-  assert.equal(AUDIO_PLAYBACK_RATE, 1);
+  assert.equal(AUDIO_PLAYBACK_RATE, 0.95);
   assert.equal(AUDIO_GAIN, 1.55);
   assert.equal(DEVICE_SPEECH_RATE, 0.86);
   const fakeAudio = { webkitPreservesPitch: false };
   assert.equal(configureAudioElement(fakeAudio), fakeAudio);
-  assert.equal(fakeAudio.defaultPlaybackRate, 1);
-  assert.equal(fakeAudio.playbackRate, 1);
+  assert.equal(fakeAudio.defaultPlaybackRate, 0.95);
+  assert.equal(fakeAudio.playbackRate, 0.95);
   assert.equal(fakeAudio.volume, 1);
   assert.equal(fakeAudio.preservesPitch, true);
   assert.equal(fakeAudio.webkitPreservesPitch, true);
@@ -173,18 +173,30 @@ test("30 篇每日故事有連貫段落並在中英文保留全部單字", () =>
   });
 });
 
-test("故事跟讀時間軸會從標題依序前進到最後一句", () => {
+test("故事跟讀時間軸會以句子精準計時並回報目前段落", () => {
   const story = STORIES[25];
   const sentences = splitStorySentences(story.englishParagraphs);
   const timeline = createStoryTimeline(story);
   assert.ok(sentences.length > story.englishParagraphs.length);
   assert.equal(timeline.sentences.length, sentences.length);
+  assert.equal(timeline.paragraphCount, story.englishParagraphs.length);
   assert.ok(timeline.totalWeight > timeline.titleWeight);
   assert.equal(getStoryReadingPosition(timeline, 0).sentenceIndex, -1);
+  assert.equal(getStoryReadingPosition(timeline, 0).paragraphIndex, -1);
 
   const firstSentenceProgress = (timeline.titleWeight + 0.01) / timeline.totalWeight;
   assert.equal(getStoryReadingPosition(timeline, firstSentenceProgress).sentenceIndex, 0);
+  assert.equal(getStoryReadingPosition(timeline, firstSentenceProgress).paragraphIndex, 0);
+
+  const secondParagraphSentence = timeline.sentences.findIndex((sentence) => sentence.paragraphIndex === 1);
+  const secondParagraphProgress = (
+    timeline.titleWeight
+    + timeline.sentences.slice(0, secondParagraphSentence).reduce((sum, sentence) => sum + sentence.weight, 0)
+    + 0.01
+  ) / timeline.totalWeight;
+  assert.equal(getStoryReadingPosition(timeline, secondParagraphProgress).paragraphIndex, 1);
   assert.equal(getStoryReadingPosition(timeline, 1).sentenceIndex, timeline.sentences.length - 1);
+  assert.equal(getStoryReadingPosition(timeline, 1).paragraphIndex, timeline.paragraphCount - 1);
   assert.equal(getStoryReadingPosition(timeline, -1).progress, 0);
   assert.equal(getStoryReadingPosition(timeline, 2).progress, 1);
 });
