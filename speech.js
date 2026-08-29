@@ -10,12 +10,13 @@ const VOICE_HINTS = {
 };
 
 export const AUDIO_VOICES = {
-  female: { id: "bella", label: "Bella 女聲" },
-  male: { id: "michael", label: "Michael 男聲" }
+  female: { id: "bella", label: "Bella 女聲", description: "自然語速，聲音清晰柔和。", fallbackGender: "female" },
+  male: { id: "michael", label: "Michael 男聲", description: "自然語速，聲音沉穩清楚。", fallbackGender: "male" },
+  slow: { id: "jasper", label: "Jasper 慢速", description: "語速較慢，適合第一次聽與跟讀。", fallbackGender: "male" }
 };
 
-// 播放時統一微調，不必重新產生全部 MP3。
-export const AUDIO_PLAYBACK_RATE = 0.95;
+// MP3 在產生時已調整語速；瀏覽器維持原速播放，避免即時降速造成破音。
+export const AUDIO_PLAYBACK_RATE = 1;
 export const AUDIO_GAIN = 1.55;
 export const DEVICE_SPEECH_RATE = 0.86;
 
@@ -39,7 +40,8 @@ export function isAmericanVoice(voice) {
 export function pickAmericanVoice(voices, gender = "female") {
   const list = Array.isArray(voices) ? voices : [];
   const american = list.filter(isAmericanVoice);
-  const hints = VOICE_HINTS[gender === "male" ? "male" : "female"];
+  const fallbackGender = AUDIO_VOICES[gender]?.fallbackGender || "female";
+  const hints = VOICE_HINTS[fallbackGender];
   const matchingGender = american.find((voice) => {
     const description = `${normalize(voice.name)} ${normalize(voice.voiceURI)}`;
     return hints.some((hint) => description.includes(hint));
@@ -56,7 +58,7 @@ export function voicePitch(gender) {
 }
 
 export function getAudioPath(audioId, kind, gender = "female") {
-  const voice = AUDIO_VOICES[gender === "male" ? "male" : "female"];
+  const voice = AUDIO_VOICES[gender] || AUDIO_VOICES.female;
   const safeId = String(audioId || "").replace(/[^0-9]/g, "");
   const validKinds = new Set(["word", "example-1", "example-2"]);
   if (!safeId || !validKinds.has(kind)) return null;
@@ -64,6 +66,6 @@ export function getAudioPath(audioId, kind, gender = "female") {
 }
 
 export function getStoryAudioPath(storyId, gender = "female") {
-  const voice = AUDIO_VOICES[gender === "male" ? "male" : "female"];
+  const voice = AUDIO_VOICES[gender] || AUDIO_VOICES.female;
   return /^\d{2}$/.test(storyId || "") ? `./audio/${voice.id}/stories/${storyId}.mp3` : null;
 }

@@ -40,8 +40,8 @@ def load_stories() -> list[tuple[str, str]]:
     return stories
 
 
-def generate_one(pipeline: KPipeline, voice: str, text: str, output: Path) -> None:
-    chunks = [audio for _, _, audio in pipeline(text, voice=voice, speed=1)]
+def generate_one(pipeline: KPipeline, voice: str, text: str, output: Path, speed: float) -> None:
+    chunks = [audio for _, _, audio in pipeline(text, voice=voice, speed=speed)]
     if not chunks:
         raise RuntimeError(f"無法產生音訊：{text[:80]}")
     audio = np.concatenate(chunks)
@@ -61,6 +61,8 @@ def generate_one(pipeline: KPipeline, voice: str, text: str, output: Path) -> No
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--voice", choices=VOICE_IDS, required=True)
+    parser.add_argument("--speed", type=float, default=0.95)
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
     stories = load_stories()
@@ -68,10 +70,10 @@ def main() -> None:
     pipeline = KPipeline(lang_code="a")
     for story_id, text in stories:
         output = output_dir / f"{story_id}.mp3"
-        if output.exists() and output.stat().st_size > 1000:
+        if not args.overwrite and output.exists() and output.stat().st_size > 1000:
             continue
         print(f"[{args.voice}] story {story_id}", flush=True)
-        generate_one(pipeline, VOICE_IDS[args.voice], text, output)
+        generate_one(pipeline, VOICE_IDS[args.voice], text, output, args.speed)
 
     actual = len(list(output_dir.glob("*.mp3")))
     if actual != 30:

@@ -80,11 +80,12 @@ h1 { margin: 0; font-size: clamp(1.6rem, 7vw, 2.1rem); line-height: 1.2; letter-
   border-radius: 14px;
   background: rgba(255,255,255,.1);
 }
-.voice-control { margin-top: 15px; }
+.voice-control { width: 100%; margin-top: 15px; display: grid; grid-template-columns: auto 1fr; align-items: center; }
 .theme-control { margin-top: 8px; }
 .voice-control-label, .theme-control-label { padding-left: 8px; display: inline-flex; align-items: center; gap: 6px; color: #ede9fe; font-size: .82rem; font-weight: 800; }
 .voice-control-label svg, .theme-control-label svg, .speak-button svg, .example-speak-button svg, .review-speak-button svg, .review-sentence-button svg, .story-action-button svg { width: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .voice-segment, .theme-segment { display: inline-flex; padding: 2px; gap: 2px; border-radius: 10px; background: rgba(17,17,39,.18); }
+.voice-segment { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .voice-option, .theme-option {
   min-width: 58px;
   min-height: 44px;
@@ -98,6 +99,11 @@ h1 { margin: 0; font-size: clamp(1.6rem, 7vw, 2.1rem); line-height: 1.2; letter-
   cursor: pointer;
 }
 .voice-option.is-active, .theme-option.is-active { color: var(--primary-strong); background: #fff; box-shadow: 0 2px 8px rgba(17,17,39,.18); }
+.voice-option { min-width: 0; padding-inline: 8px; transition: color .18s ease, background-color .18s ease, box-shadow .18s ease; }
+.voice-option-slow { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.slow-badge { padding: 2px 5px; border-radius: 999px; color: #78350f; background: #fef3c7; font-size: .66rem; line-height: 1.25; white-space: nowrap; }
+.voice-option-slow.is-active .slow-badge { color: #fff; background: #92400e; }
+.voice-description { grid-column: 2; min-height: 1.25em; margin: 0 6px 2px; color: #f5f3ff; font-size: .78rem; font-weight: 650; line-height: 1.35; }
 .streak-pill {
   min-width: 54px;
   height: 48px;
@@ -599,11 +605,16 @@ main { max-width: 720px; margin: 0 auto; }
 }
 @media (orientation: landscape) and (max-height: 560px) {
   .app-header { padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 16px; }
-  .header-subtitle, .voice-control { display: none; }
+  .header-subtitle { display: none; }
+  .voice-control { margin-top: 10px; }
   .review-card { height: 460px; }
   .tap-prompt { margin-top: 25px; }
 }
 @media (max-width: 390px) {
+  .voice-control { grid-template-columns: 1fr; gap: 6px; }
+  .voice-control-label { padding-left: 4px; }
+  .voice-description { grid-column: 1; margin-inline: 4px; }
+  .voice-option { font-size: .78rem; padding-inline: 5px; }
   .story-card-heading { display: block; }
   .story-card-heading .story-action-button { width: 100%; margin-top: 12px; }
 }

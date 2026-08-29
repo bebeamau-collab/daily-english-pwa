@@ -65,7 +65,7 @@ export function normalizeState(value) {
   return {
     version: 1,
     theme: value.theme === "dark" ? "dark" : "light",
-    voiceGender: value.voiceGender === "male" ? "male" : "female",
+    voiceGender: ["female", "male", "slow"].includes(value.voiceGender) ? value.voiceGender : "female",
     completedDates: Array.isArray(value.completedDates) ? [...new Set(value.completedDates)].sort() : [],
     learned: value.learned && typeof value.learned === "object" ? value.learned : {},
     reviews: value.reviews && typeof value.reviews === "object" ? value.reviews : {}

@@ -52,8 +52,8 @@ def load_entries() -> list[dict[str, str]]:
     return entries
 
 
-def generate_one(pipeline: KPipeline, voice: str, text: str, output: Path) -> None:
-    chunks = [audio for _, _, audio in pipeline(text, voice=voice, speed=1)]
+def generate_one(pipeline: KPipeline, voice: str, text: str, output: Path, speed: float) -> None:
+    chunks = [audio for _, _, audio in pipeline(text, voice=voice, speed=speed)]
     if not chunks:
         raise RuntimeError(f"無法產生音訊：{text}")
     audio = np.concatenate(chunks)
@@ -73,6 +73,8 @@ def generate_one(pipeline: KPipeline, voice: str, text: str, output: Path) -> No
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--voice", choices=VOICE_IDS, required=True)
+    parser.add_argument("--speed", type=float, default=0.95)
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
     entries = load_entries()
@@ -83,10 +85,10 @@ def main() -> None:
         audio_id = f"{index:03d}"
         for kind, text in entry.items():
             output = output_dir / f"{audio_id}-{kind}.mp3"
-            if output.exists() and output.stat().st_size > 1000:
+            if not args.overwrite and output.exists() and output.stat().st_size > 1000:
                 continue
             print(f"[{args.voice}] {audio_id} {kind}: {text}", flush=True)
-            generate_one(pipeline, VOICE_IDS[args.voice], text, output)
+            generate_one(pipeline, VOICE_IDS[args.voice], text, output, args.speed)
 
     expected = len(entries) * 3
     actual = len(list(output_dir.glob("*.mp3")))

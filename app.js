@@ -1,4 +1,4 @@
-import { WORDS } from "./words.js?v=15";
+import { WORDS } from "./words.js?v=16";
 import {
   STORAGE_KEY,
   answerReview,
@@ -9,7 +9,7 @@ import {
   getDailyWords,
   getDueWords,
   normalizeState
-} from "./core.js?v=15";
+} from "./core.js?v=16";
 import {
   AUDIO_GAIN,
   AUDIO_VOICES,
@@ -19,14 +19,14 @@ import {
   getStoryAudioPath,
   pickAmericanVoice,
   voicePitch
-} from "./speech.js?v=15";
+} from "./speech.js?v=16";
 import {
   createDailyStory,
   createStoryTimeline,
   getStoryAudioText,
   getStoryReadingPosition,
   splitStorySentences
-} from "./story.js?v=15";
+} from "./story.js?v=16";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -98,6 +98,8 @@ function renderVoiceControl() {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+  const selectedVoice = AUDIO_VOICES[state.voiceGender] || AUDIO_VOICES.female;
+  elements.voiceDescription.textContent = `${selectedVoice.label}：${selectedVoice.description}`;
 }
 
 function renderThemeControl() {

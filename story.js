@@ -1,5 +1,5 @@
-import { RAW_STORIES } from "./stories-data.js?v=15";
-import { WORDS_PER_DAY, dayNumber } from "./core.js?v=15";
+import { RAW_STORIES } from "./stories-data.js?v=16";
+import { WORDS_PER_DAY, dayNumber } from "./core.js?v=16";
 
 function parseStories(raw) {
   return [...raw.matchAll(

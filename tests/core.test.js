@@ -116,6 +116,7 @@ test("localStorage JSON 往返可持久化，streak 中斷歸零", () => {
   assert.deepEqual(restored, state);
   assert.equal(restored.theme, "light");
   assert.equal(restored.voiceGender, "female");
+  assert.equal(normalizeState({ ...state, voiceGender: "slow" }).voiceGender, "slow");
   assert.equal(normalizeState({ ...state, theme: "dark" }).theme, "dark");
   assert.equal(normalizeState({ ...state, theme: "system" }).theme, "light");
   assert.equal(calculateStreak(["2026-07-20", "2026-07-21", "2026-07-22"], "2026-07-23"), 3);
@@ -123,7 +124,7 @@ test("localStorage JSON 往返可持久化，streak 中斷歸零", () => {
   assert.equal(calculateStreak(["2026-07-21", "2026-07-22", "2026-07-23"], "2026-07-23"), 3);
 });
 
-test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", () => {
+test("自然美式語音提供 Bella、Michael 與較慢的 Jasper，裝置語音只作備用", () => {
   const voices = [
     { name: "Samantha", voiceURI: "com.apple.speech.synthesis.voice.samantha", lang: "en-US", default: true },
     { name: "Alex", voiceURI: "com.apple.speech.synthesis.voice.alex", lang: "en-US", default: false },
@@ -131,16 +132,19 @@ test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", ()
   ];
   assert.equal(pickAmericanVoice(voices, "female").name, "Samantha");
   assert.equal(pickAmericanVoice(voices, "male").name, "Alex");
+  assert.equal(pickAmericanVoice(voices, "slow").name, "Alex");
   assert.equal(pickAmericanVoice([{ name: "US Voice", lang: "en-US", default: true }], "male").name, "US Voice");
   assert.equal(AUDIO_VOICES.female.id, "bella");
   assert.equal(AUDIO_VOICES.male.id, "michael");
-  assert.equal(AUDIO_PLAYBACK_RATE, 0.95);
+  assert.equal(AUDIO_VOICES.slow.id, "jasper");
+  assert.match(AUDIO_VOICES.slow.description, /語速較慢/);
+  assert.equal(AUDIO_PLAYBACK_RATE, 1);
   assert.equal(AUDIO_GAIN, 1.55);
   assert.equal(DEVICE_SPEECH_RATE, 0.86);
   const fakeAudio = { webkitPreservesPitch: false };
   assert.equal(configureAudioElement(fakeAudio), fakeAudio);
-  assert.equal(fakeAudio.defaultPlaybackRate, 0.95);
-  assert.equal(fakeAudio.playbackRate, 0.95);
+  assert.equal(fakeAudio.defaultPlaybackRate, 1);
+  assert.equal(fakeAudio.playbackRate, 1);
   assert.equal(fakeAudio.volume, 1);
   assert.equal(fakeAudio.preservesPitch, true);
   assert.equal(fakeAudio.webkitPreservesPitch, true);
@@ -148,9 +152,11 @@ test("自然美式語音使用 Bella 與 Michael，裝置語音只作備用", ()
   assert.equal(voicePitch("female"), 1);
   assert.equal(getAudioPath("006", "word", "female"), "./audio/bella/006-word.mp3");
   assert.equal(getAudioPath("006", "example-2", "male"), "./audio/michael/006-example-2.mp3");
+  assert.equal(getAudioPath("006", "example-1", "slow"), "./audio/jasper/006-example-1.mp3");
   assert.equal(getAudioPath("006", "unknown", "male"), null);
   assert.equal(getStoryAudioPath("26", "female"), "./audio/bella/stories/26.mp3");
   assert.equal(getStoryAudioPath("26", "male"), "./audio/michael/stories/26.mp3");
+  assert.equal(getStoryAudioPath("26", "slow"), "./audio/jasper/stories/26.mp3");
   assert.equal(getStoryAudioPath("unknown", "male"), null);
 });
 
