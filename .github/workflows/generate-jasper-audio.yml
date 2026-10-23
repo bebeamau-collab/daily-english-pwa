@@ -35,10 +35,10 @@ jobs:
           python -m pip install "https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl" soundfile
 
       - name: Validate short, medium, and long speech
-        run: python scripts/generate_jasper_audio.py --speed 0.95 --smoke-test
+        run: python scripts/monthly-backup.py --voice jasper --smoke
 
       - name: Generate Jasper audio
-        run: python scripts/generate_jasper_audio.py --speed 0.95
+        run: python scripts/monthly-backup.py --voice jasper
 
       - name: Save Jasper audio
         run: |

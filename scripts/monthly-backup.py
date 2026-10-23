@@ -16,8 +16,12 @@ jobs = json.loads(subprocess.check_output(['node', str(root / 'scripts/monthly-j
 if args.voice == 'bella':
     jobs = [j for j in jobs if not (root / 'audio/matilda' / j['file']).exists()]
 jobs = [j for j in jobs if not (root / 'audio' / args.voice / j['file']).exists()]
+if not jobs:
+    print(f'{args.voice}: no missing files; existing audio preserved')
+    raise SystemExit(0)
 if args.smoke:
-    jobs = [jobs[0], next(j for j in jobs if 'example' in j['file']), next(j for j in jobs if 'stories' in j['file'])] if args.voice != 'bella' else jobs[:1]
+    selected = [next((j for j in jobs if token in j['file']), None) for token in ['-word.', '-example-', 'stories/']]
+    jobs = [j for j in selected if j is not None]
 if args.voice == 'jasper':
     from kittentts import KittenTTS
     model = KittenTTS('KittenML/kitten-tts-mini-0.8')

@@ -10,7 +10,7 @@
 
 import { PHONETICS } from "./phonetics.js?v=17";
 import { SECOND_EXAMPLES } from "./second-examples.js?v=17";
-import { OCTOBER_WORDS } from "./monthly-2026-10.js";
+import { OCTOBER_WORDS } from "./monthly-2026-10.js?v=17";
 
 const RAW_WORDS = `
 #飲食點餐

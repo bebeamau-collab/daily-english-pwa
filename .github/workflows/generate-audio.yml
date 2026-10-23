@@ -34,7 +34,7 @@ jobs:
           python -m pip install "kokoro>=0.9,<1" soundfile
 
       - name: Generate Bella audio
-        run: python scripts/generate_audio.py --voice bella --speed 0.95
+        run: python scripts/monthly-backup.py --voice bella
 
       - name: Save Bella audio
         run: |
@@ -45,7 +45,7 @@ jobs:
           git push
 
       - name: Generate Michael audio
-        run: python scripts/generate_audio.py --voice michael --speed 0.95
+        run: python scripts/monthly-backup.py --voice michael
 
       - name: Save Michael audio
         run: |

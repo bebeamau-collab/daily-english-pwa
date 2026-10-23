@@ -437,7 +437,7 @@ function wordCard(item, index) {
     <div class="word-card-top">
       <div>
         <span class="word-number">${String(index + 1).padStart(2, "0")}</span>
-        <span class="level-badge">${item.level}</span>
+        <span class="level-badge">${item.level}${item.levelNote && item.level !== '口語' ? '（估級）' : ''}</span>
       </div>
       <span class="topic-chip">${item.topic}</span>
     </div>
@@ -605,7 +605,7 @@ function switchView(view, updateHistory = false) {
     active ? button.setAttribute("aria-current", "page") : button.removeAttribute("aria-current");
   });
   const titles = {
-    today: ["今天的 10 個字", "每天一點點，記得更久。"],
+    today: ["今天的 10 個字", `字庫 ${WORDS.length} 詞・每天一點點，記得更久。`],
     review: ["複習時間", "想起來，比看過更重要。"],
     progress: ["我的進度", "每次回來，都算進步。"]
   };

@@ -1,4 +1,4 @@
-import { MATILDA_ASSETS } from './matilda-assets.js';
+import { MATILDA_ASSETS } from './matilda-assets.js?v=17';
 const VOICE_HINTS = {
   female: [
     "samantha", "ava", "allison", "susan", "zoe", "victoria",

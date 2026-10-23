@@ -1,7 +1,7 @@
 import { RAW_STORIES } from "./stories-data.js?v=17";
 import { WORDS_PER_DAY, dayNumber } from "./core.js?v=17";
-import { curriculumGroup } from './curriculum.js';
-import { OCTOBER_STORIES } from './monthly-2026-10.js';
+import { curriculumGroup } from './curriculum.js?v=17';
+import { OCTOBER_STORIES } from './monthly-2026-10.js?v=17';
 
 function parseStories(raw) {
   return [...raw.matchAll(
