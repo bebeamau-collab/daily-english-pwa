@@ -1,4 +1,4 @@
-import { WORDS } from "./words.js?v=16";
+import { WORDS } from "./words.js?v=17";
 import {
   STORAGE_KEY,
   answerReview,
@@ -9,7 +9,7 @@ import {
   getDailyWords,
   getDueWords,
   normalizeState
-} from "./core.js?v=16";
+} from "./core.js?v=17";
 import {
   AUDIO_GAIN,
   AUDIO_VOICES,
@@ -19,14 +19,14 @@ import {
   getStoryAudioPath,
   pickAmericanVoice,
   voicePitch
-} from "./speech.js?v=16";
+} from "./speech.js?v=17";
 import {
   createDailyStory,
   createStoryTimeline,
   getStoryAudioText,
   getStoryReadingPosition,
   splitStorySentences
-} from "./story.js?v=16";
+} from "./story.js?v=17";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])

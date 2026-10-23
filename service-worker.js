@@ -1,16 +1,19 @@
-const CACHE_NAME = "daily-english-v16";
+const CACHE_NAME = "daily-english-v17";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js?v=16",
-  "./core.js?v=16",
-  "./speech.js?v=16",
-  "./story.js?v=16",
-  "./stories-data.js?v=16",
-  "./words.js?v=16",
-  "./second-examples.js?v=16",
-  "./phonetics.js?v=16",
+  "./app.js?v=17",
+  "./core.js?v=17",
+  "./speech.js?v=17",
+  "./story.js?v=17",
+  "./stories-data.js?v=17",
+  "./words.js?v=17",
+  "./second-examples.js?v=17",
+  "./phonetics.js?v=17",
+  "./curriculum.js?v=17",
+  "./monthly-2026-10.js?v=17",
+  "./matilda-assets.js?v=17",
   "./manifest.webmanifest",
   "./icons/icon-180.png",
   "./icons/icon-512.png"

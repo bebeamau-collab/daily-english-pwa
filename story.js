@@ -1,5 +1,7 @@
-import { RAW_STORIES } from "./stories-data.js?v=16";
-import { WORDS_PER_DAY, dayNumber } from "./core.js?v=16";
+import { RAW_STORIES } from "./stories-data.js?v=17";
+import { WORDS_PER_DAY, dayNumber } from "./core.js?v=17";
+import { curriculumGroup } from './curriculum.js';
+import { OCTOBER_STORIES } from './monthly-2026-10.js';
 
 function parseStories(raw) {
   return [...raw.matchAll(
@@ -12,11 +14,10 @@ function parseStories(raw) {
   }));
 }
 
-export const STORIES = parseStories(RAW_STORIES);
+export const STORIES = parseStories(RAW_STORIES).concat(OCTOBER_STORIES);
 
 export function getStoryIndex(dateString) {
-  const index = dayNumber(dateString) - dayNumber("2026-01-01");
-  return ((index % STORIES.length) + STORIES.length) % STORIES.length;
+  return curriculumGroup(dateString);
 }
 
 export function createDailyStory(words, dateString) {

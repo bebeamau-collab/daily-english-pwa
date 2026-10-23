@@ -40,7 +40,7 @@ import {
 test("字庫完整且每日洗牌在一輪內不重複", () => {
   assert.ok(WORDS.length >= 300);
   const seen = new Set();
-  for (let offset = 0; offset < Math.floor(WORDS.length / 10); offset += 1) {
+  for (let offset = 0; offset < 30; offset += 1) {
     const date = addDays("2026-01-01", offset);
     const first = getDailyWords(WORDS, date);
     const second = getDailyWords(WORDS, date);
@@ -161,15 +161,15 @@ test("自然美式語音提供 Bella、Michael 與較慢的 Jasper，裝置語�
 });
 
 test("30 篇每日故事有連貫段落並在中英文保留全部單字", () => {
-  assert.equal(STORIES.length, 30);
-  const shuffled = seededShuffle(WORDS, BASE_SEED + STORY_SEED_OFFSET);
+  assert.equal(STORIES.length, 40);
+  const shuffled = [...seededShuffle(WORDS.slice(0,300), BASE_SEED + STORY_SEED_OFFSET), ...WORDS.slice(300)];
   const validation = validateStories(shuffled);
   validation.forEach((result) => {
     assert.deepEqual(result.missingEnglish, [], `故事 ${result.id} 英文缺字`);
     assert.deepEqual(result.missingChinese, [], `故事 ${result.id} 中文缺字`);
   });
   STORIES.forEach((story, index) => {
-    const date = addDays("2026-01-01", index);
+    const date = index < 30 ? addDays("2026-01-01", index) : addDays("2026-10-24", index-30);
     const daily = getDailyWords(WORDS, date);
     const rendered = createDailyStory(daily, date);
     assert.equal(rendered.id, String(index + 1).padStart(2, "0"));

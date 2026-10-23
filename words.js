@@ -8,8 +8,9 @@
  * 程式會自動把例句中第一次出現的英文單字／片語加上 <strong> 粗體標籤。
  */
 
-import { PHONETICS } from "./phonetics.js?v=16";
-import { SECOND_EXAMPLES } from "./second-examples.js?v=16";
+import { PHONETICS } from "./phonetics.js?v=17";
+import { SECOND_EXAMPLES } from "./second-examples.js?v=17";
+import { OCTOBER_WORDS } from "./monthly-2026-10.js";
 
 const RAW_WORDS = `
 #飲食點餐
@@ -370,6 +371,6 @@ export const WORDS = RAW_WORDS.trim().split("\n").flatMap((line) => {
 }).map((item, index) => ({
   ...item,
   audioId: String(index + 1).padStart(3, "0")
-}));
+})).concat(OCTOBER_WORDS);
 
 export default WORDS;

@@ -1,3 +1,4 @@
+import { MATILDA_ASSETS } from './matilda-assets.js';
 const VOICE_HINTS = {
   female: [
     "samantha", "ava", "allison", "susan", "zoe", "victoria",
@@ -10,7 +11,7 @@ const VOICE_HINTS = {
 };
 
 export const AUDIO_VOICES = {
-  female: { id: "bella", label: "Bella 女聲", description: "自然語速，聲音清晰柔和。", fallbackGender: "female" },
+  female: { id: "bella", label: "自然女聲", description: "原有教材 Bella；新單字與例句 Matilda，部分新文章由 Bella 備援。", fallbackGender: "female" },
   male: { id: "michael", label: "Michael 男聲", description: "自然語速，聲音沉穩清楚。", fallbackGender: "male" },
   slow: { id: "jasper", label: "Jasper 慢速", description: "語速較慢，適合第一次聽與跟讀。", fallbackGender: "male" }
 };
@@ -62,10 +63,12 @@ export function getAudioPath(audioId, kind, gender = "female") {
   const safeId = String(audioId || "").replace(/[^0-9]/g, "");
   const validKinds = new Set(["word", "example-1", "example-2"]);
   if (!safeId || !validKinds.has(kind)) return null;
-  return `./audio/${voice.id}/${safeId}-${kind}.mp3`;
+  const file = `${safeId}-${kind}.mp3`;
+  return `./audio/${gender === 'female' && MATILDA_ASSETS.has(file) ? 'matilda' : voice.id}/${file}`;
 }
 
 export function getStoryAudioPath(storyId, gender = "female") {
   const voice = AUDIO_VOICES[gender] || AUDIO_VOICES.female;
-  return /^\d{2}$/.test(storyId || "") ? `./audio/${voice.id}/stories/${storyId}.mp3` : null;
+  const file = `stories/${storyId}.mp3`;
+  return /^\d{2,}$/.test(storyId || "") ? `./audio/${gender === 'female' && MATILDA_ASSETS.has(file) ? 'matilda' : voice.id}/${file}` : null;
 }
