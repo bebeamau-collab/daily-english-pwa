@@ -1,0 +1,7 @@
+# Verified on macOS arm64, Python 3.11, November 2026 batch.
+kokoro==0.9.4
+soundfile==0.14.0
+torch==2.15.0
+transformers==4.57.6
+huggingface_hub==0.36.2
+https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl

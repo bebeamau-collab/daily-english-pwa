@@ -11,8 +11,12 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument('--voice', choices=['bella', 'michael', 'jasper'], required=True)
 parser.add_argument('--smoke', action='store_true')
+parser.add_argument('--batch', help='YYYY-MM; defaults to latest registered batch')
 args = parser.parse_args()
-jobs = json.loads(subprocess.check_output(['node', str(root / 'scripts/monthly-jobs.mjs')]))
+command = ['node', str(root / 'scripts/monthly-jobs.mjs')]
+if args.batch:
+    command += ['--batch', args.batch]
+jobs = json.loads(subprocess.check_output(command))
 if args.voice == 'bella':
     jobs = [j for j in jobs if not (root / 'audio/matilda' / j['file']).exists()]
 jobs = [j for j in jobs if not (root / 'audio' / args.voice / j['file']).exists()]

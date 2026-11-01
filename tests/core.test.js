@@ -161,14 +161,14 @@ test("自然美式語音提供 Bella、Michael 與較慢的 Jasper，裝置語�
 });
 
 test("30 篇每日故事有連貫段落並在中英文保留全部單字", () => {
-  assert.equal(STORIES.length, 40);
+  assert.equal(STORIES.length, WORDS.length / 10);
   const shuffled = [...seededShuffle(WORDS.slice(0,300), BASE_SEED + STORY_SEED_OFFSET), ...WORDS.slice(300)];
   const validation = validateStories(shuffled);
   validation.forEach((result) => {
     assert.deepEqual(result.missingEnglish, [], `故事 ${result.id} 英文缺字`);
     assert.deepEqual(result.missingChinese, [], `故事 ${result.id} 中文缺字`);
   });
-  STORIES.forEach((story, index) => {
+  STORIES.slice(0, 40).forEach((story, index) => {
     const date = index < 30 ? addDays("2026-01-01", index) : addDays("2026-10-24", index-30);
     const daily = getDailyWords(WORDS, date);
     const rendered = createDailyStory(daily, date);

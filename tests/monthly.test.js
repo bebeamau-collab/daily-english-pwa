@@ -6,7 +6,7 @@ import {createDailyStory} from '../story.js';
 import {OCTOBER_WORDS,OCTOBER_STORIES} from '../monthly-2026-10.js';
 import fs from 'node:fs';
 test('100詞永久ID、無重複、兩組例句與十篇故事完整',()=>{
- assert.equal(WORDS.length,400);assert.equal(new Set(WORDS.map(w=>w.word.toLowerCase())).size,400);
+ assert.ok(WORDS.length>=400);assert.equal(new Set(WORDS.map(w=>w.word.toLowerCase())).size,WORDS.length);
  assert.equal(OCTOBER_WORDS.length,100);assert.equal(OCTOBER_STORIES.length,10);
  for(const [i,w]of OCTOBER_WORDS.entries()){
   assert.equal(w.audioId,String(301+i));assert.match(w.phonetic,/^\/.+\/$/);

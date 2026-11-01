@@ -13,3 +13,11 @@
 免費備援指令：scripts/monthly-backup.py --voice bella|michael|jasper。資料來源scripts/monthly-jobs.mjs，只列當期新增工作；bella跳過已有Matilda之檔案。先--smoke驗證短／中／長，再同指令補其餘。ffmpeg -n禁止覆寫舊檔。未完成全部有效語音與手機／平板驗證前不推送正式main。
 
 後續月份將monthly-jobs.mjs改為指定批次／合併新增批次，保留既有資料。新詞、例句與故事須由同一個批次匯出，避免Python解析固定300詞／30篇的舊資料格式。新聲音先完整解碼；單一聲線已試聽通過不代表每個新詞都已人工聽校。
+
+## 2026-11 補跑
+
+使用者11/1明確要求現在補跑；新增401–500詞、41–50故事。scripts/monthly-jobs.mjs現已支援 `--batch YYYY-MM`，未知月份直接拒絕，不默默改跑舊批次；monthly-backup.py同步接受此選項。未指定時只補最新登錄批次。語音環境版本記於scripts/requirements-monthly-audio.txt。
+
+11/1發布release總組數50，但10/24開始的40天輪次保留到12/2；下一輪12/3接納新增，41號故事於12/13首次出現。不回改release歷史或既有配對。12月排程產新批時，仍須檢查在進行輪次的可用組數及ID不變。
+
+發布檢查點包含：所有新詞與兩例句／十篇文章三聲線逐按、真實媒體時間前進及錯誤偵測、所有英／中底線跳轉、翻譯收合、跟讀與重播／停止、分頁、主題、完成學習、翻卡記得／忘記與持久化、手機平板尺寸、PWA離線冷載入及已播音檔重播。使用獨立localhost測試origin；scripts/qa-server.py只在本機注入DOM音訊觀察器，正式index.html不含測試碼。每個音檔完整解碼並排除靜音，對照發布前commit驗證所有舊MP3的Git blob hash未變。

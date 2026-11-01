@@ -1,5 +1,5 @@
 // 下一輪才接納新批次；詞組與故事的固定對照不重新洗牌。
-export const RELEASES = [{ date: '2026-10-24', groups: 40 }];
+export const RELEASES = [{ date: '2026-10-24', groups: 40 }, { date: '2026-11-01', groups: 50 }];
 const serial = date => Math.round(Date.parse(`${date}T12:00:00Z`) / 86400000);
 export function curriculumGroup(date) {
   const target = serial(date);
