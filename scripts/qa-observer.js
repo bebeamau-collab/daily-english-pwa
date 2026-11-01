@@ -25,6 +25,14 @@
       Object.assign(el.dataset,{id,src:audio.src,event,time:String(audio.currentTime),duration:String(info.duration),error:String(info.error),playing:audio.dataset.qaPlaying||'false',advanced:String(audio.currentTime>0.05&&!audio.paused),ended:String(audio.ended)});
     };
     for(const event of ['loadstart','loadedmetadata','canplay','play','playing','timeupdate','pause','ended','error'])audio.addEventListener(event,()=>update(event));
+    if(new URLSearchParams(location.search).get('qaRace')==='1' && id==='1') {
+      // Deterministic browser-boundary test: an old play promise rejects after replacement.
+      const nativePlay=audio.play.bind(audio);
+      audio.play=()=>nativePlay().then(()=>new Promise((resolve,reject)=>setTimeout(()=>{
+        panel().dataset.lateRejection='true';
+        reject(new DOMException('QA delayed abort','AbortError'));
+      },1500)));
+    }
     return audio;
   };
   window.Audio.prototype=NativeAudio.prototype;

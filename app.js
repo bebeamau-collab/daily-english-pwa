@@ -1,4 +1,4 @@
-import { WORDS } from "./words.js?v=18";
+import { WORDS } from "./words.js?v=19";
 import {
   STORAGE_KEY,
   answerReview,
@@ -9,7 +9,7 @@ import {
   getDailyWords,
   getDueWords,
   normalizeState
-} from "./core.js?v=18";
+} from "./core.js?v=19";
 import {
   AUDIO_GAIN,
   AUDIO_VOICES,
@@ -19,14 +19,14 @@ import {
   getStoryAudioPath,
   pickAmericanVoice,
   voicePitch
-} from "./speech.js?v=18";
+} from "./speech.js?v=19";
 import {
   createDailyStory,
   createStoryTimeline,
   getStoryAudioText,
   getStoryReadingPosition,
   splitStorySentences
-} from "./story.js?v=18";
+} from "./story.js?v=19";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -226,7 +226,7 @@ function prepareNaturalAudio(audio) {
     source.connect(gain).connect(compressor).connect(sharedAudioContext.destination);
     enhancedAudio.set(audio, { source, gain, compressor });
   } catch {
-    // Web Audio 不可用時，仍以原生音量與較慢速度播放。
+    // Web Audio 不可用時，仍以原生音量播放。
   }
 
   return audio;
@@ -244,6 +244,8 @@ function stopActivePlayback() {
 }
 
 function speakWithDeviceVoice(text, speakKey = text, trackStory = false) {
+  const playbackToken = audioSequenceToken;
+  const isCurrentPlayback = () => playbackToken === audioSequenceToken;
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
     showToast("這個瀏覽器不支援語音播放");
     if (trackStory) resetStoryReader();
@@ -259,20 +261,24 @@ function speakWithDeviceVoice(text, speakKey = text, trackStory = false) {
   utterance.pitch = voicePitch(state.voiceGender);
   if (voice) utterance.voice = voice;
   utterance.onstart = () => {
+    if (!isCurrentPlayback()) return;
     speakingText = speakKey;
     updateSpeakButtons();
     if (trackStory) updateStoryReader(0);
   };
   utterance.onboundary = (event) => {
+    if (!isCurrentPlayback()) return;
     if (trackStory && Number.isFinite(event.charIndex)) {
       updateStoryReader(event.charIndex / text.length);
     }
   };
   utterance.onend = () => {
+    if (!isCurrentPlayback()) return;
     finishSpeaking();
     if (trackStory) completeStoryReader();
   };
   utterance.onerror = () => {
+    if (!isCurrentPlayback()) return;
     finishSpeaking();
     if (trackStory) resetStoryReader();
   };
@@ -289,23 +295,29 @@ function speakText(text, audioId, kind) {
   }
 
   const audio = prepareNaturalAudio(new Audio(path));
+  const playbackToken = audioSequenceToken;
+  const isCurrentPlayback = () => playbackToken === audioSequenceToken && activeAudio === audio;
   activeAudio = audio;
   audio.preload = "auto";
   audio.onplay = () => {
+    if (!isCurrentPlayback()) return;
     speakingText = text;
     updateSpeakButtons();
   };
   audio.onended = () => {
+    if (!isCurrentPlayback()) return;
     activeAudio = null;
     finishSpeaking();
   };
   audio.onerror = () => {
+    if (!isCurrentPlayback()) return;
     activeAudio = null;
     finishSpeaking();
     showToast("自然語音尚未下載完成，暫用裝置語音");
     speakWithDeviceVoice(text);
   };
   audio.play().catch(() => {
+    if (!isCurrentPlayback()) return;
     activeAudio = null;
     finishSpeaking();
     showToast("請再點一次播放");
