@@ -1,4 +1,4 @@
-import { MATILDA_ASSETS } from './matilda-assets.js?v=19';
+import { MATILDA_ASSETS } from './matilda-assets.js?v=20';
 const VOICE_HINTS = {
   female: [
     "samantha", "ava", "allison", "susan", "zoe", "victoria",
@@ -11,7 +11,7 @@ const VOICE_HINTS = {
 };
 
 export const AUDIO_VOICES = {
-  female: { id: "bella", label: "自然女聲", description: "原有教材 Bella；新單字與例句 Matilda，部分新文章由 Bella 備援。", fallbackGender: "female" },
+  female: { id: "bella", label: "自然女聲", description: "Matilda 語音由 elevenlabs.io 生成；其餘女聲使用 Bella。", fallbackGender: "female" },
   male: { id: "michael", label: "Michael 男聲", description: "自然語速，聲音沉穩清楚。", fallbackGender: "male" },
   slow: { id: "jasper", label: "Jasper 慢速", description: "語速較慢，適合第一次聽與跟讀。", fallbackGender: "male" }
 };
