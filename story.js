@@ -1,8 +1,8 @@
-import { RAW_STORIES } from "./stories-data.js?v=20";
-import { WORDS_PER_DAY, dayNumber } from "./core.js?v=20";
-import { curriculumGroup } from './curriculum.js?v=20';
-import { OCTOBER_STORIES } from './monthly-2026-10.js?v=20';
-import { NOVEMBER_STORIES } from './monthly-2026-11.js?v=20';
+import { RAW_STORIES } from "./stories-data.js?v=21";
+import { WORDS_PER_DAY, dayNumber } from "./core.js?v=21";
+import { curriculumGroup } from './curriculum.js?v=21';
+import { OCTOBER_STORIES } from './monthly-2026-10.js?v=21';
+import { NOVEMBER_STORIES } from './monthly-2026-11.js?v=21';
 
 function parseStories(raw) {
   return [...raw.matchAll(

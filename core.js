@@ -1,4 +1,4 @@
-import { curriculumGroup } from './curriculum.js?v=20';
+import { curriculumGroup } from './curriculum.js?v=21';
 export const STORAGE_KEY = "dailyEnglishPwaStateV1";
 export const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
 export const WORDS_PER_DAY = 10;

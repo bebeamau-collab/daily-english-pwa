@@ -150,7 +150,7 @@ test("自然美式語音提供 Bella、Michael 與較慢的 Jasper，裝置語�
   assert.equal(fakeAudio.webkitPreservesPitch, true);
   assert.equal(voicePitch("male"), 1);
   assert.equal(voicePitch("female"), 1);
-  assert.equal(getAudioPath("006", "word", "female"), "./audio/bella/006-word.mp3");
+  assert.equal(getAudioPath("005", "word", "female"), "./audio/bella/005-word.mp3");
   assert.equal(getAudioPath("006", "example-2", "male"), "./audio/michael/006-example-2.mp3");
   assert.equal(getAudioPath("006", "example-1", "slow"), "./audio/jasper/006-example-1.mp3");
   assert.equal(getAudioPath("006", "unknown", "male"), null);
