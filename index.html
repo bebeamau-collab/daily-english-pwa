@@ -19,7 +19,7 @@
         document.documentElement.dataset.theme = "light";
       }
     </script>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=22">
     <title>每日英文單字</title>
   </head>
   <body>
@@ -37,19 +37,20 @@
           </div>
         </div>
         <p id="header-subtitle" class="header-subtitle">每天一點點，記得更久。</p>
-        <div class="voice-control" role="group" aria-label="美式發音聲音選擇">
+        <div class="voice-control" role="group" aria-label="英語發音聲音選擇">
           <span class="voice-control-label">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
-            美式發音
+            英語發音
           </span>
           <span class="voice-segment">
-            <button class="voice-option is-active" type="button" data-voice-gender="female" aria-pressed="true">自然女聲</button>
-            <button class="voice-option" type="button" data-voice-gender="male" aria-pressed="false">Michael 男聲</button>
-            <button class="voice-option voice-option-slow" type="button" data-voice-gender="slow" aria-pressed="false" aria-label="Jasper 男聲，較慢語速，適合第一次聽與跟讀">
-              <span>Jasper</span><span class="slow-badge">較慢</span>
+            <button class="voice-option is-active" type="button" data-voice-gender="female" aria-pressed="true">ElevenLabs 女聲</button>
+            <button class="voice-option" type="button" data-voice-gender="male" aria-pressed="false">Qwen 男聲</button>
+            <button class="voice-option voice-option-slow" type="button" data-voice-gender="slow" aria-pressed="false" aria-label="Qwen 慢速女聲，適合第一次聽與跟讀">
+              Qwen 慢速女聲
             </button>
+            <button class="voice-option" type="button" data-voice-gender="chatterbox" aria-pressed="false">Chatterbox 女聲</button>
           </span>
-          <span id="voice-description" class="voice-description" aria-live="polite">自然女聲：Matilda 語音由 elevenlabs.io 生成；其餘女聲使用 Bella。</span>
+          <span id="voice-description" class="voice-description" aria-live="polite">ElevenLabs 女聲：Matilda。只有已錄製的單字、例句與文章會顯示播放按鈕。</span>
         </div>
         <div class="theme-control" role="group" aria-label="閱讀底色選擇">
           <span class="theme-control-label">
@@ -93,7 +94,7 @@
                 <span>播放完整文章</span>
               </button>
             </div>
-            <p class="story-hint">播放時會用跳色底與括號標示目前段落；點擊有底線的英文，可快速前往該單字。</p>
+            <p class="story-hint"><span id="story-playback-hint">播放時會用跳色底與括號標示目前段落。</span> 點擊有底線的英文，可快速前往該單字。</p>
             <div id="story-reader-tracker" class="story-reader-tracker">
               <div class="story-reader-meta">
                 <span class="story-reader-icon" aria-hidden="true">
@@ -260,6 +261,6 @@
     </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=21"></script>
+    <script type="module" src="./app.js?v=23"></script>
   </body>
 </html>

@@ -9,7 +9,7 @@ import {
   getDailyWords,
   getDueWords,
   normalizeState
-} from "./core.js?v=21";
+} from "./core.js?v=22";
 import {
   AUDIO_GAIN,
   AUDIO_VOICES,
@@ -19,14 +19,14 @@ import {
   getStoryAudioPath,
   pickAmericanVoice,
   voicePitch
-} from "./speech.js?v=21";
+} from "./speech.js?v=23";
 import {
   createDailyStory,
   createStoryTimeline,
   getStoryAudioText,
   getStoryReadingPosition,
   splitStorySentences
-} from "./story.js?v=21";
+} from "./story.js?v=22";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [element.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), element])
@@ -100,6 +100,18 @@ function renderVoiceControl() {
   });
   const selectedVoice = AUDIO_VOICES[state.voiceGender] || AUDIO_VOICES.female;
   elements.voiceDescription.textContent = `${selectedVoice.label}：${selectedVoice.description}`;
+}
+
+function updateAudioAvailability() {
+  const voice = state.voiceGender;
+  document.querySelectorAll("[data-speak-text][data-audio-id]").forEach((button) => {
+    button.hidden = !getAudioPath(button.dataset.audioId, button.dataset.audioKind, voice);
+  });
+  const storyButton = elements.storySpeak;
+  storyButton.hidden = !getStoryAudioPath(storyButton.dataset.storyId, voice);
+  elements.storyReaderTracker.hidden = storyButton.hidden;
+  elements.storyPlaybackHint.hidden = storyButton.hidden;
+  storyButton.setAttribute("aria-label", `使用 ${AUDIO_VOICES[voice].label} 播放今日文章`);
 }
 
 function renderThemeControl() {
@@ -289,10 +301,7 @@ function speakText(text, audioId, kind) {
   stopActivePlayback();
 
   const path = getAudioPath(audioId, kind, state.voiceGender);
-  if (!path) {
-    speakWithDeviceVoice(text);
-    return;
-  }
+  if (!path) return;
 
   const audio = prepareNaturalAudio(new Audio(path));
   const playbackToken = audioSequenceToken;
@@ -313,7 +322,11 @@ function speakText(text, audioId, kind) {
     if (!isCurrentPlayback()) return;
     activeAudio = null;
     finishSpeaking();
-    showToast("自然語音尚未下載完成，暫用裝置語音");
+    if (state.voiceGender === "female") {
+      showToast("目前無法播放 ElevenLabs 音檔");
+      return;
+    }
+    showToast("語音尚未下載完成，暫用裝置語音");
     speakWithDeviceVoice(text);
   };
   audio.play().catch(() => {
@@ -332,8 +345,10 @@ function playStoryAudio(story) {
   }
 
   stopActivePlayback();
+  const path = getStoryAudioPath(story.id, state.voiceGender);
+  if (!path) return;
   const text = getStoryAudioText(story);
-  const audio = prepareNaturalAudio(new Audio(getStoryAudioPath(story.id, state.voiceGender)));
+  const audio = prepareNaturalAudio(new Audio(path));
   const playbackToken = audioSequenceToken;
   const isCurrentPlayback = () => playbackToken === audioSequenceToken && activeAudio === audio;
   activeAudio = audio;
@@ -361,6 +376,11 @@ function playStoryAudio(story) {
     fallbackStarted = true;
     activeAudio = null;
     finishSpeaking();
+    if (state.voiceGender === "female") {
+      resetStoryReader();
+      showToast("目前無法播放 ElevenLabs 文章");
+      return;
+    }
     showToast("完整故事音檔尚未準備好，暫用裝置語音");
     speakWithDeviceVoice(text, STORY_SPEAK_KEY, true);
   };
@@ -436,7 +456,7 @@ function renderDailyStory() {
   renderStoryParagraphs(elements.dailyStoryChinese, story.chineseParagraphs, dailyWords);
   resetStoryReader();
   elements.storySpeak.dataset.speakText = STORY_SPEAK_KEY;
-  elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
+  elements.storySpeak.dataset.storyId = story.id;
   return story;
 }
 
@@ -601,6 +621,7 @@ function renderAll() {
   renderVoiceControl();
   renderToday();
   renderReview();
+  updateAudioAvailability();
   renderProgress();
 }
 
@@ -639,7 +660,7 @@ voiceButtons.forEach((button) => {
     state.voiceGender = button.dataset.voiceGender;
     saveState();
     renderVoiceControl();
-    elements.storySpeak.setAttribute("aria-label", `使用 ${AUDIO_VOICES[state.voiceGender].label} 播放今日文章`);
+    updateAudioAvailability();
     showToast(`已切換為 ${AUDIO_VOICES[state.voiceGender].label}`);
   });
 });

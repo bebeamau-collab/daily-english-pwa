@@ -1,5 +1,5 @@
 import { RAW_STORIES } from "./stories-data.js?v=21";
-import { WORDS_PER_DAY, dayNumber } from "./core.js?v=21";
+import { WORDS_PER_DAY, dayNumber } from "./core.js?v=22";
 import { curriculumGroup } from './curriculum.js?v=21';
 import { OCTOBER_STORIES } from './monthly-2026-10.js?v=21';
 import { NOVEMBER_STORIES } from './monthly-2026-11.js?v=21';

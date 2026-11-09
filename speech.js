@@ -1,4 +1,6 @@
 import { MATILDA_ASSETS } from './matilda-assets.js?v=21';
+import { VOICE_ASSETS } from './voice-assets.js?v=22';
+import { TEACHER_ASSETS } from './teacher-assets.js?v=23';
 const VOICE_HINTS = {
   female: [
     "samantha", "ava", "allison", "susan", "zoe", "victoria",
@@ -11,9 +13,10 @@ const VOICE_HINTS = {
 };
 
 export const AUDIO_VOICES = {
-  female: { id: "bella", label: "自然女聲", description: "Matilda 語音由 elevenlabs.io 生成；其餘女聲使用 Bella。", fallbackGender: "female" },
-  male: { id: "michael", label: "Michael 男聲", description: "自然語速，聲音沉穩清楚。", fallbackGender: "male" },
-  slow: { id: "jasper", label: "Jasper 慢速", description: "語速較慢，適合第一次聽與跟讀。", fallbackGender: "male" }
+  female: { id: "matilda", label: "ElevenLabs 女聲", description: "Matilda。只有已錄製的單字、例句與文章會顯示播放按鈕。", fallbackGender: "female" },
+  male: { id: "qwen-ryan", legacyId: "michael", label: "Qwen 男聲", description: "Ryan 男聲。例句與文章採用英文老師的朗讀語氣，發音清晰，語速平穩。", fallbackGender: "male" },
+  slow: { id: "qwen-serena", legacyId: "jasper", label: "Qwen 慢速女聲", description: "Serena 女聲，音檔已預先降為 0.9 倍，適合跟讀。", fallbackGender: "female" },
+  chatterbox: { id: "chatterbox", legacyId: "bella", label: "Chatterbox 女聲", description: "單獨選用 Chatterbox 女聲。新音檔未備妥時沿用既有女聲。", fallbackGender: "female" }
 };
 
 // MP3 在產生時已調整語速；瀏覽器維持原速播放，避免即時降速造成破音。
@@ -58,17 +61,22 @@ export function voicePitch(gender) {
   return 1;
 }
 
+function getVoiceFile(file, gender) {
+  const key = Object.hasOwn(AUDIO_VOICES, gender) ? gender : "female";
+  const voice = AUDIO_VOICES[key];
+  if (key === "female") return MATILDA_ASSETS.has(file) ? `./audio/matilda/${file}` : null;
+  if (key === "male" && TEACHER_ASSETS.has(file)) return `./audio/qwen-teacher/${file}`;
+  if (VOICE_ASSETS[voice.id].has(file)) return `./audio/${voice.id}/${file}`;
+  return `./audio/${voice.legacyId}/${file}`;
+}
+
 export function getAudioPath(audioId, kind, gender = "female") {
-  const voice = AUDIO_VOICES[gender] || AUDIO_VOICES.female;
   const safeId = String(audioId || "").replace(/[^0-9]/g, "");
   const validKinds = new Set(["word", "example-1", "example-2"]);
   if (!safeId || !validKinds.has(kind)) return null;
-  const file = `${safeId}-${kind}.mp3`;
-  return `./audio/${gender === 'female' && MATILDA_ASSETS.has(file) ? 'matilda' : voice.id}/${file}`;
+  return getVoiceFile(`${safeId}-${kind}.mp3`, gender);
 }
 
 export function getStoryAudioPath(storyId, gender = "female") {
-  const voice = AUDIO_VOICES[gender] || AUDIO_VOICES.female;
-  const file = `stories/${storyId}.mp3`;
-  return /^\d{2,}$/.test(storyId || "") ? `./audio/${gender === 'female' && MATILDA_ASSETS.has(file) ? 'matilda' : voice.id}/${file}` : null;
+  return /^\d{2,}$/.test(storyId || "") ? getVoiceFile(`stories/${storyId}.mp3`, gender) : null;
 }

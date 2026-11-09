@@ -1,12 +1,13 @@
-const CACHE_NAME = "daily-english-v21";
+const CACHE_NAME = "daily-english-v23";
+const LEGACY_AUDIO_CACHES = new Set(["daily-english-v21", "daily-english-v22"]);
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js?v=21",
-  "./core.js?v=21",
-  "./speech.js?v=21",
-  "./story.js?v=21",
+  "./styles.css?v=22",
+  "./app.js?v=23",
+  "./core.js?v=22",
+  "./speech.js?v=23",
+  "./story.js?v=22",
   "./stories-data.js?v=21",
   "./words.js?v=21",
   "./second-examples.js?v=21",
@@ -15,6 +16,8 @@ const APP_SHELL = [
   "./monthly-2026-10.js?v=21",
   "./monthly-2026-11.js?v=21",
   "./matilda-assets.js?v=21",
+  "./voice-assets.js?v=22",
+  "./teacher-assets.js?v=23",
   "./manifest.webmanifest",
   "./icons/icon-180.png",
   "./icons/icon-512.png"
@@ -28,7 +31,10 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      // Earlier caches contain still-valid recordings, including offline Matilda audio.
+      .then((keys) => Promise.all(keys
+        .filter((key) => /^daily-english-v\d+$/.test(key) && key !== CACHE_NAME && !LEGACY_AUDIO_CACHES.has(key))
+        .map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -61,8 +67,8 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => (
-        cached || (event.request.mode === "navigate" ? caches.match("./index.html") : undefined)
+      .catch(() => caches.match(event.request, { cacheName: CACHE_NAME }).then((cached) => (
+        cached || (event.request.mode === "navigate" ? caches.match("./index.html", { cacheName: CACHE_NAME }) : undefined)
       )))
   );
 });
