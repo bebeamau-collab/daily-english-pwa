@@ -45,8 +45,7 @@ let storyHighlightTimeout = null;
 let storyReaderCompletionTimeout = null;
 let storyTimeline = null;
 let activeStoryParagraph = null;
-
-const STORY_SPEAK_KEY = "__daily-story__";
+let storyPlayback = "idle";
 
 function getToday() {
   const requested = new URLSearchParams(location.search).get("date");
@@ -61,6 +60,7 @@ if (isLocalTest && new URLSearchParams(location.search).get("resetTest") === "1"
 
 const today = getToday();
 const dailyWords = getDailyWords(WORDS, today);
+const dailyStory = createDailyStory(dailyWords, today);
 let state = loadState();
 let reviewQueue = [];
 let currentReview = null;
@@ -111,7 +111,7 @@ function updateAudioAvailability() {
   storyButton.hidden = !getStoryAudioPath(storyButton.dataset.storyId, voice);
   elements.storyReaderTracker.hidden = storyButton.hidden;
   elements.storyPlaybackHint.hidden = storyButton.hidden;
-  storyButton.setAttribute("aria-label", `使用 ${AUDIO_VOICES[voice].label} 播放今日文章`);
+  renderStoryPlaybackControls();
 }
 
 function renderThemeControl() {
@@ -132,6 +132,35 @@ function updateSpeakButtons() {
   });
 }
 
+function renderStoryPlaybackControls() {
+  const active = storyPlayback !== "idle";
+  const paused = storyPlayback === "paused";
+  const canPause = storyPlayback === "playing" || paused;
+  if (!canPause && document.activeElement === elements.storyPause) {
+    elements.storySpeak.focus({ preventScroll: true });
+  }
+  elements.storySpeak.querySelector("span").textContent = active ? "停止朗讀" : "播放完整文章";
+  elements.storySpeak.setAttribute("aria-label", active ? "停止朗讀" : `播放完整文章（${AUDIO_VOICES[state.voiceGender].label}）`);
+  elements.storySpeak.classList.toggle("is-speaking", active && !paused);
+  elements.storyPause.hidden = !canPause;
+  elements.storyPause.querySelector("span").textContent = paused ? "繼續" : "暫停";
+  elements.storyPause.setAttribute("aria-label", paused ? "繼續文章朗讀" : "暫停文章朗讀");
+  elements.storyPauseIcon.setAttribute("d", paused ? "M8 5v14l11-7L8 5Z" : "M9 5v14m6-14v14");
+  elements.storyReaderTracker.classList.toggle("has-playback-controls", canPause);
+  elements.storyReaderTracker.classList.toggle("is-paused", paused);
+}
+
+function setStoryPlayback(next) {
+  storyPlayback = next;
+  renderStoryPlaybackControls();
+  if (next === "loading") elements.storyReaderStatus.textContent = "正在載入朗讀";
+  if (next === "paused") elements.storyReaderStatus.textContent = "朗讀已暫停";
+  if (next === "playing") {
+    elements.storyReaderStatus.textContent = activeStoryParagraph === null || activeStoryParagraph === -1
+      ? "正在朗讀標題" : "段落跟讀中";
+  }
+}
+
 function setStoryReaderProgress(progress) {
   const safeProgress = Math.min(1, Math.max(0, Number(progress) || 0));
   elements.storyReaderProgressFill.style.transform = `scaleX(${safeProgress})`;
@@ -150,7 +179,7 @@ function clearStoryParagraphMarker() {
 function keepReadingParagraphVisible(paragraph) {
   if (!paragraph) return;
   const rect = paragraph.getBoundingClientRect();
-  const topGuard = 72;
+  const topGuard = Math.max(72, elements.storyReaderTracker.getBoundingClientRect().bottom + 8);
   const bottomGuard = window.innerHeight - 112;
   if (rect.top < topGuard || rect.bottom > bottomGuard) {
     paragraph.scrollIntoView({
@@ -193,6 +222,7 @@ function updateStoryReader(progress, followText = true) {
 
 function resetStoryReader() {
   clearTimeout(storyReaderCompletionTimeout);
+  setStoryPlayback("idle");
   clearStoryParagraphMarker();
   elements.storyReaderTracker.classList.remove("is-active", "is-complete");
   elements.storyReaderStatus.textContent = "逐段跟讀・播放後以括號標示";
@@ -201,6 +231,7 @@ function resetStoryReader() {
 }
 
 function completeStoryReader() {
+  setStoryPlayback("idle");
   clearStoryParagraphMarker();
   elements.storyReaderTracker.classList.add("is-active", "is-complete");
   elements.storyReaderStatus.textContent = "朗讀完成";
@@ -250,12 +281,15 @@ function stopActivePlayback() {
     activeAudio.pause();
     activeAudio = null;
   }
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if ("speechSynthesis" in window) {
+    speechSynthesis.cancel();
+    if (speechSynthesis.paused) speechSynthesis.resume();
+  }
   finishSpeaking();
   resetStoryReader();
 }
 
-function speakWithDeviceVoice(text, speakKey = text, trackStory = false) {
+function speakWithDeviceVoice(text, trackStory = false) {
   const playbackToken = audioSequenceToken;
   const isCurrentPlayback = () => playbackToken === audioSequenceToken;
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
@@ -274,13 +308,17 @@ function speakWithDeviceVoice(text, speakKey = text, trackStory = false) {
   if (voice) utterance.voice = voice;
   utterance.onstart = () => {
     if (!isCurrentPlayback()) return;
-    speakingText = speakKey;
-    updateSpeakButtons();
-    if (trackStory) updateStoryReader(0);
+    if (trackStory) {
+      setStoryPlayback("playing");
+      updateStoryReader(0);
+    } else {
+      speakingText = text;
+      updateSpeakButtons();
+    }
   };
   utterance.onboundary = (event) => {
     if (!isCurrentPlayback()) return;
-    if (trackStory && Number.isFinite(event.charIndex)) {
+    if (trackStory && storyPlayback === "playing" && Number.isFinite(event.charIndex)) {
       updateStoryReader(event.charIndex / text.length);
     }
   };
@@ -338,7 +376,7 @@ function speakText(text, audioId, kind) {
 }
 
 function playStoryAudio(story) {
-  if (speakingText === STORY_SPEAK_KEY) {
+  if (storyPlayback !== "idle") {
     stopActivePlayback();
     showToast("已停止文章朗讀");
     return;
@@ -352,15 +390,22 @@ function playStoryAudio(story) {
   const playbackToken = audioSequenceToken;
   const isCurrentPlayback = () => playbackToken === audioSequenceToken && activeAudio === audio;
   activeAudio = audio;
+  setStoryPlayback("loading");
   audio.preload = "auto";
-  audio.onplay = () => {
-    if (!isCurrentPlayback()) return;
-    speakingText = STORY_SPEAK_KEY;
-    updateSpeakButtons();
+  audio.onplaying = () => {
+    if (!isCurrentPlayback() || audio.paused) return;
+    setStoryPlayback("playing");
     updateStoryReader(audio.duration ? audio.currentTime / audio.duration : 0);
   };
+  audio.onpause = () => {
+    if (!isCurrentPlayback() || !audio.paused || audio.ended || storyPlayback !== "playing") return;
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      updateStoryReader(audio.currentTime / audio.duration, false);
+    }
+    setStoryPlayback("paused");
+  };
   audio.ontimeupdate = () => {
-    if (isCurrentPlayback() && Number.isFinite(audio.duration) && audio.duration > 0) {
+    if (isCurrentPlayback() && storyPlayback === "playing" && !audio.paused && Number.isFinite(audio.duration) && audio.duration > 0) {
       updateStoryReader(audio.currentTime / audio.duration);
     }
   };
@@ -382,10 +427,40 @@ function playStoryAudio(story) {
       return;
     }
     showToast("完整故事音檔尚未準備好，暫用裝置語音");
-    speakWithDeviceVoice(text, STORY_SPEAK_KEY, true);
+    speakWithDeviceVoice(text, true);
   };
   audio.onerror = useFallbackVoice;
   audio.play().catch(useFallbackVoice);
+}
+
+function toggleStoryPause() {
+  const audio = activeAudio;
+  if (storyPlayback === "playing") {
+    if (audio) {
+      audio.pause();
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        updateStoryReader(audio.currentTime / audio.duration, false);
+      }
+    } else {
+      speechSynthesis.pause();
+    }
+    setStoryPlayback("paused");
+  } else if (storyPlayback === "paused") {
+    if (audio) {
+      if (sharedAudioContext?.state === "suspended" || sharedAudioContext?.state === "interrupted") {
+        sharedAudioContext.resume().catch(() => {});
+      }
+      setStoryPlayback("playing");
+      audio.play().catch(() => {
+        if (activeAudio !== audio || storyPlayback !== "playing" || !audio.paused) return;
+        setStoryPlayback("paused");
+        showToast("無法繼續朗讀，請再試一次");
+      });
+    } else {
+      setStoryPlayback("playing");
+      speechSynthesis.resume();
+    }
+  }
 }
 
 function createStoryWordButton(word, audioId, displayedWord = word) {
@@ -447,17 +522,14 @@ function renderStoryParagraphs(container, paragraphs, words, trackReading = fals
   container.replaceChildren(fragment);
 }
 
-function renderDailyStory() {
-  const story = createDailyStory(dailyWords, today);
+function renderDailyStory(story) {
   storyTimeline = createStoryTimeline(story);
   elements.dailyStoryTitle.textContent = story.title;
   elements.storyWordCount.textContent = `約 ${story.wordCount} 個英文字`;
   renderStoryParagraphs(elements.dailyStoryEnglish, story.englishParagraphs, dailyWords, true);
   renderStoryParagraphs(elements.dailyStoryChinese, story.chineseParagraphs, dailyWords);
   resetStoryReader();
-  elements.storySpeak.dataset.speakText = STORY_SPEAK_KEY;
   elements.storySpeak.dataset.storyId = story.id;
-  return story;
 }
 
 function wordCard(item, index) {
@@ -532,7 +604,6 @@ function renderToday() {
     new Date(`${today}T12:00:00`)
   );
   elements.todayDate.textContent = date;
-  renderDailyStory();
   elements.wordList.replaceChildren(...dailyWords.map(wordCard));
   elements.todayCompleteCard.hidden = !completed;
   elements.completeToday.hidden = completed;
@@ -678,10 +749,8 @@ elements.wordList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-speak-text]");
   if (button) speakText(button.dataset.speakText, button.dataset.audioId, button.dataset.audioKind);
 });
-elements.storySpeak.addEventListener("click", () => {
-  const story = createDailyStory(dailyWords, today);
-  playStoryAudio(story);
-});
+elements.storySpeak.addEventListener("click", () => playStoryAudio(dailyStory));
+elements.storyPause.addEventListener("click", toggleStoryPause);
 elements.storyTranslationToggle.addEventListener("click", () => {
   const willOpen = elements.dailyStoryTranslation.hidden;
   elements.dailyStoryTranslation.hidden = !willOpen;
@@ -737,6 +806,7 @@ elements.forgotButton.addEventListener("click", () => handleReviewAnswer(false))
 navButtons.forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view, true)));
 window.addEventListener("popstate", () => switchView(location.hash.slice(1) || "today"));
 
+renderDailyStory(dailyStory);
 renderAll();
 switchView(location.hash.slice(1) || "today");
 

@@ -229,6 +229,12 @@ main { max-width: 720px; margin: 0 auto; }
   content: "";
   animation: reading-pulse 1.5s ease-out infinite;
 }
+.story-reader-tracker.has-playback-controls {
+  position: sticky;
+  top: calc(env(safe-area-inset-top) + 8px);
+  z-index: 1;
+}
+.story-reader-tracker.is-paused .story-reader-icon::after { display: none; }
 .story-reader-tracker.is-complete {
   color: #166534;
   border-color: #86efac;
@@ -316,6 +322,10 @@ main { max-width: 720px; margin: 0 auto; }
   transition: color .18s ease, background .18s ease, transform .12s ease;
 }
 .story-action-button:hover, .story-action-button.is-speaking { color: #fff; background: var(--primary); }
+.story-pause-button { flex: 0 0 auto; min-width: 88px; }
+.story-pause-button svg { width: 16px; }
+.story-pause-button:active { color: #fff; background: var(--primary); }
+.story-reader-tracker.has-playback-controls .story-reader-meta { flex-wrap: wrap; }
 .translation-toggle { margin-top: 12px; }
 .story-translation { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .translation-note { margin: 0; color: var(--text-muted); font-size: .8rem; }

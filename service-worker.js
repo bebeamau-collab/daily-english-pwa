@@ -1,10 +1,10 @@
-const CACHE_NAME = "daily-english-v23";
-const LEGACY_AUDIO_CACHES = new Set(["daily-english-v21", "daily-english-v22"]);
+const CACHE_NAME = "daily-english-v24";
+const LEGACY_AUDIO_CACHES = new Set(["daily-english-v21", "daily-english-v22", "daily-english-v23"]);
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=22",
-  "./app.js?v=23",
+  "./styles.css?v=24",
+  "./app.js?v=24",
   "./core.js?v=22",
   "./speech.js?v=23",
   "./story.js?v=22",

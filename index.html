@@ -19,7 +19,7 @@
         document.documentElement.dataset.theme = "light";
       }
     </script>
-    <link rel="stylesheet" href="./styles.css?v=22">
+    <link rel="stylesheet" href="./styles.css?v=24">
     <title>每日英文單字</title>
   </head>
   <body>
@@ -89,7 +89,7 @@
                 <h3 id="daily-story-title"></h3>
                 <span id="story-word-count" class="story-word-count"></span>
               </div>
-              <button id="story-speak" class="story-action-button" type="button" aria-pressed="false">
+              <button id="story-speak" class="story-action-button" type="button">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12 1a3 3 0 0 1 0 4m2-7a7 7 0 0 1 0 10"/></svg>
                 <span>播放完整文章</span>
               </button>
@@ -102,6 +102,12 @@
                 </span>
                 <span id="story-reader-status" role="status" aria-live="polite">逐段跟讀・播放後以括號標示</span>
                 <span id="story-reader-count" class="story-reader-count" aria-hidden="true"></span>
+                <button id="story-pause" class="story-action-button story-pause-button" type="button" hidden>
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path id="story-pause-icon" d="M9 5v14m6-14v14"/>
+                  </svg>
+                  <span>暫停</span>
+                </button>
               </div>
               <div
                 id="story-reader-progress"
@@ -261,6 +267,6 @@
     </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=23"></script>
+    <script type="module" src="./app.js?v=24"></script>
   </body>
 </html>
